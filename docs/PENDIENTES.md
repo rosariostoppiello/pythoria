@@ -39,3 +39,24 @@
 - **Plantillas**: se instalaron solo las plantillas web de Godot 4.7.2 (`web_*.zip` y `version.txt`) en `~/Library/Application Support/Godot/export_templates/4.7.2.stable/`. Para exportar a otras plataformas, instalá el paquete completo desde el editor (Editor → Administrar plantillas de exportación).
 - **Fuentes en web**: el navegador no tiene fuentes de respaldo, así que cualquier carácter que no esté en Fredoka/Nunito/Fira Code se ve como un cuadradito. Se reemplazaron `◂` y `−` y la flecha `→` usa Fira Code. Si agregás textos con símbolos nuevos, revisá que la fuente los tenga.
 - **Splash de arranque** con el fondo noche y el grimorio, en vez del logo de Godot.
+
+## Herramientas que quedaron en el repo
+
+- `tools/check.sh`: import headless + todos los tests. Falla si hay errores de script.
+- `tools/gen_sprites.py`: regenera el pixel art (`python3 tools/gen_sprites.py`).
+- `tools/gen_theme.gd`: regenera `resources/ui_theme.tres` desde la paleta.
+- `tools/screenshot.gd`: captura una escena con ventana (`godot --path . -s tools/screenshot.gd -- <escena> <salida.png> [mundo] [casita]`). Acepta `PY_COMPLETED`, `PY_XP`, `PY_EXPR` y `PY_SECONDS` como variables de entorno para preparar el estado.
+
+## Lo que no se pudo hacer
+
+- **Push al remoto**: el primer push (fase A) funcionó, pero desde la fase B `git push` se queda colgado en `git credential-osxkeychain`, probablemente esperando un permiso del llavero de macOS en pantalla. Los commits están todos en local, en `main`. Para subirlos: `git push origin main` desde tu terminal (y aceptá el diálogo del llavero si aparece).
+- **GUT** no se instaló: se usó un runner propio sin dependencias (`tests/run_tests.gd`).
+
+## Errores conocidos y limitaciones
+
+- **Tablero del Frasco solo con mouse/táctil**: para poner fichas hay que arrastrar o tocar; todavía no hay forma de hacerlo solo con teclado. Los mapas sí funcionan con teclado.
+- **Opciones**: el volumen es un placeholder (no hay audio todavía) y no se guarda entre sesiones.
+- **Arte placeholder**: los sprites son pixel art generado; reemplazar cada `assets/sprites/<id>.png` por el arte final no requiere tocar código (mismo nombre; tamaños parecidos para que la escala cuadre).
+- **Mapas de sección** del mundo 2 y 3 usan la misma disposición de casitas que el 1 (así está en `worlds.json`); solo cambia la decoración.
+- **Tamaño del build web**: el `.wasm` del motor pesa ~40 MB (sin comprimir). Un servidor con gzip/brotli lo baja mucho.
+- **Avisos al cerrar los tests**: Godot imprime algunos avisos de recursos "leaked" al salir del modo headless; son del cierre del proceso, no fallas de los tests.
