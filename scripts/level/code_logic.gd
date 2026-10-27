@@ -53,12 +53,12 @@ static func run_case(code: String, test: Dictionary) -> Dictionary:
 	return PyEval.run(Array(code.split("\n")), test.get("vars", {}), test.get("inputs", []))
 
 
-## "Ada / 20" para mostrar las entradas de un caso.
+## "Ada, 20" para mostrar las entradas de un caso (una por cada input()).
 static func describe_inputs(test: Dictionary) -> String:
 	var parts: PackedStringArray = []
 	for v: Variant in test.get("inputs", []):
 		parts.append(str(v))
-	return " / ".join(parts) if not parts.is_empty() else "(sin entradas)"
+	return ", ".join(parts) if not parts.is_empty() else "(ninguna)"
 
 
 static func one_line(text: String) -> String:

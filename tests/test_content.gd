@@ -182,7 +182,7 @@ func test_corrector_de_codigo() -> void:
 	r = CodeLogic.check(l3, "nombre = input()\nedad = input()\nprint(f'Ada cumple 21 el año que viene')")
 	check_eq(r["status"], "wrong", "respuesta fija")
 	check_eq(r["failed_case"], 1, "pasa el caso 1 pero no el 2")
-	check_eq(r["message"], "Caso 2 (entrada: Linus / 35): esperaba «Linus cumple 36 el año que viene» y tu programa imprimió «Ada cumple 21 el año que viene».", "mensaje del caso")
+	check_eq(r["message"], "Caso 2 (entrada: Linus, 35): esperaba «Linus cumple 36 el año que viene» y tu programa imprimió «Ada cumple 21 el año que viene».", "mensaje del caso")
 	r = CodeLogic.check(l3, "nombre = input()\nedad = int(input())\nx = input()\nprint(f'{nombre}')")
 	check_eq(r["status"], "error", "pide input de más")
 	check(str(r["message"]).contains("más input()"), "explica el EOFError")

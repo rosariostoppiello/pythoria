@@ -35,7 +35,8 @@ func _init(p: Dictionary) -> void:
 	add_child(cases_panel)
 	var cbox := UI.vbox(4)
 	cases_panel.add_child(cbox)
-	var ct := UI.label("Casos de prueba: tu programa tiene que imprimir exactamente esto", "MutedLabel")
+	var ct := UI.label("Casos de prueba: con esas entradas para input(), tu programa tiene que imprimir exactamente lo que está después de «imprime:»", "MutedLabel")
+	ct.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	ct.add_theme_font_size_override("font_size", 14)
 	cbox.add_child(ct)
 	var ts := CodeLogic.tests(p)
@@ -88,7 +89,7 @@ func _show_cases(results: Array) -> void:
 		if i < results.size():
 			mark = "✓" if results[i]["passed"] else "x"
 			color = ThemeColors.TURQUESA if results[i]["passed"] else ThemeColors.ROJO
-		case_rows[i].text = "%s %d  entrada: %s  →  %s" % [mark, i + 1, CodeLogic.describe_inputs(t), CodeLogic.one_line(CodeLogic.normalize(str(t.get("output", ""))))]
+		case_rows[i].text = "%s Caso %d   input(): %s   imprime: %s" % [mark, i + 1, CodeLogic.describe_inputs(t), CodeLogic.one_line(CodeLogic.normalize(str(t.get("output", ""))))]
 		case_rows[i].add_theme_color_override("font_color", color)
 
 
