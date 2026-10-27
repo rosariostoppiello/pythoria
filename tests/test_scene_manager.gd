@@ -40,7 +40,8 @@ func test_flujo_menu_mapa_casita() -> void:
 	await _settle()
 	check_eq(_scene_file(), SceneManager.SCENES["section_map"], "mapa de sección")
 	check_eq(SceneManager.state, SceneManager.State.SECTION_MAP, "estado SECTION_MAP")
-	var cases := {"w1_l1": "level", "w1_mini": "minigame", "w1_boss": "level", "w2_l1": "coming_soon"}
+	var cases := {"w1_l1": "level", "w1_mini": "minigame", "w1_boss": "level", "w2_l4": "level",
+		"w2_mini": "crystal_ball", "w2_boss": "level", "w3_l1": "coming_soon"}
 	for house: String in cases:
 		SceneManager.goto_house(house)
 		await _settle()

@@ -1,6 +1,6 @@
 # Prueba manual
 
-Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 59 tests).
+Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 68 tests).
 
 ## 0. Abrir el proyecto
 
@@ -94,11 +94,25 @@ Se abre después del nivel 5. Hay 3 rondas; cada una muestra código con huecos 
 - Ronda 2 (`'Hola Byte'`) y ronda 3 (`3 == 3` → `True`).
 - Al ganar: "¡Venciste al Gremlin Sintaxis!" y +200 XP. **Continuar** lleva al **mapa de mundos**: el aprendiz camina por la línea punteada hasta el mundo 2, que aparece con un "pop" y queda desbloqueado. El nodo 1 queda dorado con estrella.
 
-## 7. Mundos 2 y 3 (placeholder)
+## 7. Mundo 2: Bosque de las Encrucijadas
 
-- Entrá al mundo 2: mapa con otra distribución de árboles y agua.
+Se abre al vencer al Gremlin. Para llegar rápido sin jugar el mundo 1, agregá `"w1_boss"` a `completed` en `save.json` (ver la sección 8).
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – ¿Más o menos? | `8 > 5` | Éxito (`True`). `3 > 5` da "Obtuviste False, pero el caldero pedía True." |
+| 2 – Un hechizo de duda | `4 != 4` o `4 >= 7` | Éxito (`False`). |
+| 3 – Llave y mapa | `True and False`, después `True or False` | `and` da False (falla); `or` da True (éxito). Los frascos se ven turquesa (esencia bool) y el operador aparece entre los frascos. |
+| 4 – La encrucijada | `poder = 7`, después `poder = 4` | A la derecha, el aprendiz frente a tres caminos (puente, cueva, río) con su `if`/`elif`/`else`. 7 ilumina el puente en rojo y aparece el **Guardián**: "te mandó a puente, pero tenías que llegar a cueva". 4 ilumina la cueva en turquesa: éxito. Abajo se ve el bloque if/elif/else con sangría. |
+| 5 – Dos condiciones | `edad = 15`, `tiene_mapa = False` | Llega a la aldea. Con `True` va al bosque profundo (incorrecto). |
+| Minijuego – Bola de cristal | Elegí una opción | Muestra un código; si elegís mal, la bola explica qué imprime de verdad. Con las tres rondas acertadas: +100 XP. |
+| Boss – Guardián de la Puerta | Ronda 1: `'10' >= 3` y después `10 >= 3`. Ronda 2: `abierto = False`, `llave = True`. Ronda 3: `nivel = 6` | La ficha `'10'` (texto) despierta a la Quimera Tipos. Cada acierto baja la vida. Al ganar: "La puerta se abre de par en par…", +200 XP y el aprendiz camina al mundo 3. |
+
+## 7b. Mundo 3 (placeholder)
+
+- Entrá al mundo 3: mapa con otra distribución de árboles y agua.
 - Cualquier casita abre **Próximamente** con los temas del mundo.
-- En el editor (build de debug) aparece **Completar (debug)**: marca la casita y abre la siguiente. Completando el boss del mundo 2 se desbloquea el 3, y así sucesivamente.
+- En el editor (build de debug) aparece **Completar (debug)**: marca la casita y abre la siguiente. Completando el boss del mundo 3 se "desbloquea" el 4, que se ve como Próximamente.
 - Los mundos 4 a 8 no tienen casitas: si llegás con el botón debug, se ven como "Próximamente" y no se puede entrar.
 
 ## 8. Guardado

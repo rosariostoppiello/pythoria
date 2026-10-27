@@ -48,6 +48,14 @@ Cada nivel muestra una misión ("el caldero necesita un poder de 8").
 - Colores de esencia: número = lavanda, texto = pergamino, verdadero/falso = turquesa. (No usar dorado ni rojo para tipos.)
 - Evaluador propio en GDScript con semántica de Python (int + str es error; `==` devuelve bool; `+` entre str concatena; `*` entre int multiplica). No usar la semántica de GDScript.
 
+### 4b. Mecánica de la Encrucijada (if / elif / else, mundo 2)
+
+Usa los mismos frascos y fichas, pero en lugar del caldero hay un camino que se divide en una rama por cada `if`, `elif` y `else` (`branches` en el JSON).
+- El jugador llena los frascos y aprieta Lanzar. Python prueba las condiciones de arriba hacia abajo y el aprendiz toma la primera rama verdadera, que asigna `camino = '<destino>'`.
+- Se gana si `camino` termina igual a `goal`. Se ilumina en turquesa el camino correcto, o en rojo el equivocado ("El Guardián te mandó a puente, pero tenías que llegar a cueva").
+- Los errores son los mismos que en el Frasco: frasco vacío (Fantasma Sin Nombre) o comparar número con texto (Quimera Tipos).
+- El código Python en vivo muestra el bloque if/elif/else completo con sangría.
+
 ## 5. Valores de juego (propuesta, ajustables en `data/worlds.json`)
 
 | Elemento | Valor |
@@ -118,6 +126,13 @@ Cada mundo: historia corta, 5 niveles, 1 minijuego, 1 boss. Derrotar al boss abr
 - **Boss Gremlin Sintaxis**: 3 rondas de mecánica del Frasco con dificultad creciente (más frascos, más operadores, mezcla de tipos). El Gremlin tiene barra de vida que baja con cada ronda acertada. Se vence completando las 3.
 
 Idea a futuro: preguntas y rondas del boss generadas por IA adaptadas al nivel del jugador.
+
+## 9b. Mundo 2: Bosque de las Encrucijadas
+
+- **Niveles 1 a 3 (Frasco):** comparaciones (`>`, `<`, `!=`, `>=`) y operadores lógicos (`and`, `or`). El caldero pide `True` o `False`.
+- **Niveles 4 y 5 (Encrucijada):** if/elif/else con uno y con dos frascos (`edad >= 12 and tiene_mapa`).
+- **Minijuego "Bola de cristal":** la bola muestra un código con if/elif/else y el jugador elige entre 3 opciones qué va a imprimir. 3 rondas. La respuesta correcta sale de ejecutar el código, no de un campo del JSON.
+- **Boss Guardián de la Puerta:** 3 rondas (comparación con una ficha trampa de texto, `not` con `and`/`or`, y una Encrucijada), con barra de vida como el Gremlin.
 
 ## 10. Progresión y guardado
 

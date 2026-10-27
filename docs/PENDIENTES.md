@@ -60,3 +60,13 @@
 - **Mapas de sección** del mundo 2 y 3 usan la misma disposición de casitas que el 1 (así está en `worlds.json`); solo cambia la decoración.
 - **Tamaño del build web**: el `.wasm` del motor pesa ~40 MB (sin comprimir). Un servidor con gzip/brotli lo baja mucho.
 - **Avisos al cerrar los tests**: Godot imprime algunos avisos de recursos "leaked" al salir del modo headless; son del cierre del proceso, no fallas de los tests.
+
+## Mundo 2 (agregado después)
+
+- **Mecánica de if/elif/else elegida: la Encrucijada** (ver `docs/DISENO.md` §4b). Reusa el tablero del Frasco (`FrascoBoard`): si el nivel tiene `"mechanic": "encrucijada"`, en lugar del caldero se muestra `CrossroadsView` con una rama por cada `branches[i]`; una rama sin `cond` es el `else`. Las condiciones pueden llevar `OP` para que el jugador elija el operador, aunque los niveles actuales no lo usan.
+- **Evaluador ampliado**: comparaciones `< > <= >=` (encadenadas como en Python), `and`/`or`/`not` con cortocircuito y devolviendo un operando como Python, bloques `if/elif/else` con sangría en `PyEval.run`, e `IndentationError`. Comparar número con texto da `TypeError: no se puede comparar int y str con >`.
+- **Bola de cristal**: la respuesta correcta se calcula ejecutando el código de la ronda; los tests verifican que exactamente una opción coincide. La "criatura" de una predicción equivocada es la bola misma (no es un bug, es un error de lectura).
+- **Textos del boss en el JSON**: `taunt` (frase al lado del boss) y `victory` (mensaje al vencerlo) en `boss_fight`; se agregaron también al Gremlin.
+- **Mundo 3** pasa a ser el único placeholder con casitas ("Próximamente").
+- **Sprites nuevos**: `guardian_puerta` (armadura roja con escudo-puerta y llave) y `crystal_ball`.
+- **Pendiente propuesto, no hecho**: guiar la mirada en el nivel 1 (que las fichas pulsen al empezar y el botón Lanzar cuando los frascos están llenos), para que la primera pantalla se sienta menos cargada sin sacar nada.

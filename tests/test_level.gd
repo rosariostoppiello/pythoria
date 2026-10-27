@@ -116,9 +116,15 @@ func test_drag_and_drop() -> void:
 	check(not board.tray._can_drop_data(Vector2.ZERO, data), "la bandeja no acepta fichas que ya están ahí")
 
 
-func test_boss_tres_rondas() -> void:
-	GameState.completed.assign(["w1_l1", "w1_l2", "w1_l3", "w1_l4", "w1_l5", "w1_mini"])
-	await _open("w1_boss")
+func _play_boss(world: int) -> void:
+	var ids := ContentDB.house_ids(world)
+	for id: String in ids:
+		if not id.ends_with("_boss"):
+			GameState.completed.append(id)
+	if world > 1:
+		GameState.completed.append("w%d_boss" % (world - 1))
+	var xp_before := GameState.xp
+	await _open("w%d_boss" % world)
 	check(scene.is_boss, "modo boss")
 	var rounds: Array = scene.content["rounds"]
 	for i in rounds.size():
@@ -135,15 +141,60 @@ func test_boss_tres_rondas() -> void:
 					board.place(t, j)
 					used.append(t)
 					break
-		board.set_operator(sol["op"])
+		if sol["op"] != "":
+			board.set_operator(sol["op"])
 		var r: Dictionary = await scene.launch()
-		check_eq(r["status"], "success", "ronda %d resuelta" % (i + 1))
+		check_eq(r["status"], "success", "mundo %d, ronda %d resuelta" % [world, i + 1])
 		await tree.process_frame
-	check_eq(scene._health.value, 0.0, "el Gremlin se quedó sin vida")
-	check(GameState.is_completed("w1_boss"), "boss completado")
-	check_eq(GameState.xp, 200, "200 XP del boss")
+	check_eq(scene._health.value, 0.0, "el boss se quedó sin vida")
+	check(GameState.is_completed("w%d_boss" % world), "boss completado")
+	check_eq(GameState.xp - xp_before, 200, "200 XP del boss")
 	check(_result() != null and _result().info.get("is_boss", false), "resultado de boss (vuelve al mapa de mundos)")
-	check(GameState.is_world_unlocked(2), "se abre el mundo 2")
+	check(GameState.is_world_unlocked(world + 1), "se abre el mundo siguiente")
+
+
+func test_boss_tres_rondas() -> void:
+	await _play_boss(1)
+
+
+func test_boss_guardian() -> void:
+	await _play_boss(2)
+	check_eq(_result().info["message"], ContentDB.get_content("w2_boss")["victory"], "mensaje de victoria del JSON")
+
+
+func test_encrucijada_en_escena() -> void:
+	GameState.completed.assign(["w1_boss", "w2_l1", "w2_l2", "w2_l3"])
+	await _open("w2_l4")
+	var board: FrascoBoard = scene.board
+	check(board.crossroads != null, "se ve la encrucijada en vez del caldero")
+	check_eq(board.crossroads.rows.size(), 3, "tres caminos")
+	board.place(0, 0)  # 7 -> puente
+	var r: Dictionary = await scene.launch()
+	check_eq(r["status"], "wrong", "7 lleva al puente")
+	check_eq(_result().info["creature"], "guardian_puerta", "aparece el Guardián")
+	check_eq(board.crossroads._chosen, 0, "se ilumina el puente")
+	_result()._retry_now()
+	await tree.process_frame
+	board.place(1, 0)  # 4 -> cueva
+	r = await scene.launch()
+	check_eq(r["status"], "success", "4 lleva a la cueva")
+	check(GameState.is_completed("w2_l4"), "nivel completado")
+
+
+func test_bola_de_cristal() -> void:
+	GameState.completed.assign(["w1_boss", "w2_l1", "w2_l2", "w2_l3", "w2_l4", "w2_l5"])
+	await _open("w2_mini", "res://scenes/level/crystal_ball.tscn")
+	var r: Dictionary = await scene.choose("débil")
+	check_eq(r["status"], "wrong", "predicción equivocada")
+	_result()._retry_now()
+	await tree.process_frame
+	var rounds: Array = scene.content["rounds"]
+	for i in rounds.size():
+		check_eq(scene.option_buttons.size(), (rounds[i]["options"] as Array).size(), "botones de la ronda %d" % (i + 1))
+		r = await scene.choose(MinigameLogic.prediction_answer(rounds[i]))
+		check_eq(r["status"], "success", "ronda %d" % (i + 1))
+	check(GameState.is_completed("w2_mini"), "minijuego completado")
+	check_eq(GameState.house_state("w2_boss"), "open", "se abre el Guardián")
 
 
 func test_minijuego() -> void:

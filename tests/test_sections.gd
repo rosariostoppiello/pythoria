@@ -48,10 +48,10 @@ func test_estados_visuales() -> void:
 
 
 func test_placeholder_proximamente() -> void:
-	GameState.completed.append("w1_boss")
-	SceneManager.world_id = 2
-	SceneManager.house_id = "w2_l1"
-	check(ContentDB.get_content("w2_l1").is_empty(), "mundo 2 no tiene contenido todavía")
+	GameState.completed.append_array(["w1_boss", "w2_boss"])
+	SceneManager.world_id = 3
+	SceneManager.house_id = "w3_l1"
+	check(ContentDB.get_content("w3_l1").is_empty(), "mundo 3 no tiene contenido todavía")
 	var scene: Control = load("res://scenes/level/coming_soon.tscn").instantiate()
 	tree.root.add_child(scene)
 	await tree.process_frame
@@ -59,8 +59,8 @@ func test_placeholder_proximamente() -> void:
 	check_eq(debug_btn != null, OS.is_debug_build(), "botón debug solo en builds de debug")
 	if debug_btn:
 		(debug_btn as Button).pressed.emit()
-		check(GameState.is_completed("w2_l1"), "el botón debug completa la casita")
-		check_eq(GameState.house_state("w2_l2"), "open", "y abre la siguiente")
+		check(GameState.is_completed("w3_l1"), "el botón debug completa la casita")
+		check_eq(GameState.house_state("w3_l2"), "open", "y abre la siguiente")
 	scene.queue_free()
 	await tree.process_frame
 	await tree.create_timer(0.5).timeout

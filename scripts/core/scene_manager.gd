@@ -11,6 +11,7 @@ const SCENES := {
 	"section_map": "res://scenes/section_map/section_map.tscn",
 	"level": "res://scenes/level/level.tscn",
 	"minigame": "res://scenes/level/minigame.tscn",
+	"crystal_ball": "res://scenes/level/crystal_ball.tscn",
 	"coming_soon": "res://scenes/level/coming_soon.tscn",
 }
 const PAUSE_SCENE := "res://scenes/pause/pause.tscn"
@@ -87,7 +88,7 @@ func goto_section(id: int, from_house: String = "") -> void:
 	_change("section_map", State.SECTION_MAP)
 
 
-## Entra a una casita: nivel del Frasco, boss, minijuego o "Próximamente".
+## Entra a una casita: nivel del Frasco o la Encrucijada, boss, minijuego o "Próximamente".
 func goto_house(id: String) -> void:
 	house_id = id
 	world_id = ContentDB.world_of(id)
@@ -97,7 +98,9 @@ func goto_house(id: String) -> void:
 		key = "level"  # boss: rondas de Frasco
 	elif str(content.get("kind", "")) == "completa_el_hechizo":
 		key = "minigame"
-	elif str(content.get("mechanic", "")) == "frasco":
+	elif str(content.get("kind", "")) == "bola_de_cristal":
+		key = "crystal_ball"
+	elif str(content.get("mechanic", "")) in ["frasco", "encrucijada"]:
 		key = "level"
 	_change(key, State.LEVEL)
 

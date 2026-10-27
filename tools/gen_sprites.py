@@ -373,6 +373,51 @@ def star_icon() -> Image.Image:
     return img
 
 
+def guardian() -> Image.Image:
+    img, d = canvas(24)
+    armor = shade(ROJO, 0.8)
+    # piernas y cuerpo con armadura roja
+    d.rectangle([8, 18, 10, 22], fill=shade(ROJO, 0.55))
+    d.rectangle([13, 18, 15, 22], fill=shade(ROJO, 0.55))
+    d.rectangle([6, 9, 17, 19], fill=armor)
+    d.line([(7, 13), (16, 13)], fill=shade(ROJO, 0.6))
+    # casco con visera que brilla
+    d.ellipse([7, 1, 16, 10], fill=ROJO)
+    d.rectangle([7, 5, 16, 10], fill=ROJO)
+    d.rectangle([8, 6, 15, 7], fill=TINTA)
+    px(d, [(9, 6), (10, 6), (13, 6), (14, 6)], PERGAMINO)
+    px(d, [(11, 0), (12, 0), (11, 1), (12, 1)], shade(ROJO, 1.3))
+    # escudo con forma de puerta
+    d.rectangle([0, 9, 7, 21], fill=MARRON)
+    d.ellipse([0, 6, 7, 13], fill=MARRON)
+    d.line([(1, 14), (6, 14)], fill=GRIS)
+    d.line([(1, 18), (6, 18)], fill=GRIS)
+    px(d, [(5, 16)], PERGAMINO)
+    # llave enorme en la otra mano
+    d.line([(19, 6), (19, 19)], fill=shade(PERGAMINO, 0.85), width=1)
+    d.ellipse([17, 2, 21, 7], outline=shade(PERGAMINO, 0.85))
+    px(d, [(20, 17), (21, 17), (20, 19), (21, 19)], shade(PERGAMINO, 0.85))
+    d.rectangle([16, 11, 18, 13], fill=armor)
+    return img
+
+
+def crystal_ball() -> Image.Image:
+    img, d = canvas(24)
+    # base
+    d.polygon([(6, 23), (18, 23), (16, 18), (8, 18)], fill=VIOLETA)
+    d.line([(8, 20), (16, 20)], fill=shade(VIOLETA, 1.3))
+    # esfera
+    d.ellipse([3, 1, 20, 18], fill=LAVANDA)
+    d.ellipse([5, 3, 18, 16], fill=shade(LAVANDA, 1.15))
+    # remolino turquesa adentro
+    d.arc([7, 6, 16, 14], 200, 520, fill=TURQUESA, width=1)
+    px(d, [(11, 9), (12, 10), (10, 11)], TURQUESA)
+    # brillos
+    px(d, [(7, 4), (8, 4), (6, 5), (6, 6)], PERGAMINO)
+    px(d, [(16, 13)], PERGAMINO)
+    return img
+
+
 # --- Casitas ------------------------------------------------------------------
 
 def house(state: str) -> Image.Image:
@@ -498,6 +543,8 @@ def main() -> None:
         "fantasma_sin_nombre": fantasma(),
         "quimera_tipos": quimera(),
         "ouroboros": ouroboros(),
+        "guardian_puerta": guardian(),
+        "crystal_ball": crystal_ball(),
         "jar": jar(),
         "cauldron": cauldron(),
         "grimoire": grimoire(),

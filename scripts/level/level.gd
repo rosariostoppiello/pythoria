@@ -1,5 +1,5 @@
 extends Control
-## Nivel del Frasco. También corre el boss (varias rondas de Frasco con barra de vida).
+## Nivel del Frasco o de la Encrucijada. También corre el boss (varias rondas con barra de vida).
 
 var house_id: String
 var content: Dictionary
@@ -96,7 +96,7 @@ func _build_mission_panel(p: Dictionary) -> void:
 func _goal_row(p: Dictionary) -> Control:
 	var row := UI.hbox(8)
 	row.name = "GoalRow"
-	row.add_child(UI.label("El caldero pide:", "InkLabel"))
+	row.add_child(UI.label("Llegá a:" if FrascoLogic.is_crossroads(p) else "El caldero pide:", "InkLabel"))
 	var gt := FrascoLogic.goal_type(p)
 	var chip := TokenChip.new(PyEval.repr(FrascoLogic.goal_value(p)), ThemeColors.essence(gt))
 	chip.draggable = false
@@ -172,7 +172,7 @@ func _build_boss_panel() -> void:
 	var goal_panel := UI.panel()
 	goal_panel.name = "BossGoal"
 	box.add_child(goal_panel)
-	var taunt := UI.label("El Gremlin anda robando paréntesis. Acertá cada hechizo para bajarle la vida.", "")
+	var taunt := UI.label(str(content.get("taunt", "Acertá cada hechizo para bajarle la vida.")), "")
 	taunt.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	taunt.custom_minimum_size = Vector2(320, 0)
 	taunt.add_theme_font_size_override("font_size", 16)
@@ -264,5 +264,5 @@ func _boss_round_won() -> void:
 		"xp": gained,
 		"is_boss": true,
 		"title": "¡Venciste al %s!" % str(content.get("title", "boss")).replace("El ", ""),
-		"message": "El valle vuelve a estar en calma. Se abre el camino al siguiente mundo.",
+		"message": str(content.get("victory", "Se abre el camino al siguiente mundo.")),
 	})

@@ -24,7 +24,9 @@ func test_json_carga() -> void:
 func test_ids_de_casitas_tienen_contenido() -> void:
 	for id: String in ContentDB.house_ids(1):
 		check(not ContentDB.get_content(id).is_empty(), "%s no tiene contenido" % id)
-	check(ContentDB.get_content("w2_l1").is_empty(), "w2_l1 es placeholder")
+	for id: String in ContentDB.house_ids(2):
+		check(not ContentDB.get_content(id).is_empty(), "%s no tiene contenido" % id)
+	check(ContentDB.get_content("w3_l1").is_empty(), "w3_l1 es placeholder")
 
 
 func test_niveles_bien_formados() -> void:
@@ -100,3 +102,36 @@ func test_minijuego_resoluble() -> void:
 		var res := PyEval.run(MinigameLogic.fill(r["code"], blanks))
 		check(res["ok"], "ronda %s: %s" % [r["code"], res["message"]])
 		check_eq(res["output"], str(r["output"]), "salida de la ronda %s" % [r["code"]])
+
+
+func test_encrucijada() -> void:
+	var l4 := ContentDB.get_content("w2_l4")
+	check(FrascoLogic.is_crossroads(l4), "w2_l4 es una encrucijada")
+	var cases := {7: ["wrong", "puente"], 4: ["success", "cueva"], 1: ["wrong", "río"]}
+	for p: int in cases:
+		var r := FrascoLogic.check(l4, {"poder": p}, "")
+		check_eq(r["status"], cases[p][0], "estado con poder=%d" % p)
+		check_eq(r["path"], cases[p][1], "camino con poder=%d" % p)
+	check_eq(FrascoLogic.check(l4, {"poder": 7}, "")["message"], "El Guardián te mandó a puente, pero tenías que llegar a cueva.", "mensaje de camino equivocado")
+	check_eq(FrascoLogic.check(l4, {}, "")["status"], "name_error", "frasco vacío en la encrucijada")
+	check_eq(FrascoLogic.check(l4, {"poder": "7"}, "")["status"], "type_error", "texto comparado con número")
+	var lines := FrascoLogic.code_lines(l4, {"poder": 4}, "")
+	check_eq(Array(lines), ["poder = 4", "if poder > 5:", "    camino = 'puente'", "elif poder > 2:", "    camino = 'cueva'", "else:", "    camino = 'río'"], "código de la encrucijada")
+	var l5 := ContentDB.get_content("w2_l5")
+	check_eq(FrascoLogic.check(l5, {"edad": 15, "tiene_mapa": true}, "")["path"], "bosque profundo", "con mapa va al bosque")
+	check_eq(FrascoLogic.check(l5, {"edad": 9, "tiene_mapa": true}, "")["path"], "casa", "chico va a casa")
+
+
+func test_bola_de_cristal_resoluble() -> void:
+	var mini := ContentDB.get_content("w2_mini")
+	check_eq(mini["kind"], "bola_de_cristal", "tipo de minijuego")
+	for r: Dictionary in mini["rounds"]:
+		var answer := MinigameLogic.prediction_answer(r)
+		var matches := 0
+		for opt: Variant in r["options"]:
+			if str(opt) == answer:
+				matches += 1
+		check_eq(matches, 1, "exactamente una opción correcta en %s (imprime %s)" % [r["code"], answer])
+		check_eq(MinigameLogic.check_prediction(r, answer)["status"], "success", "la respuesta correcta gana")
+	var r0: Dictionary = mini["rounds"][0]
+	check_eq(MinigameLogic.check_prediction(r0, "débil")["status"], "wrong", "predicción equivocada")

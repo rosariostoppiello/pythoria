@@ -42,7 +42,7 @@ res://
 ## Arte
 
 - Estilo objetivo: ilustración cozy. Hoy el arte es **pixel art placeholder** generado por `tools/gen_sprites.py` (Python + Pillow). Se puede reemplazar por arte final sin tocar código: cada sprite es `assets/sprites/<id>.png` y las escenas los cargan por ese nombre.
-- Ids de sprite: `player`, `ada`, `owl`, `byte_cat`, `gremlin_sintaxis`, `fantasma_sin_nombre`, `quimera_tipos`, `ouroboros`, `jar`, `cauldron`, `grimoire`, `teacup`, `candle_books`, `house_locked`, `house_open`, `house_done`, `tile_grass`, `tile_path`, `tile_water`, `tree`, `map_node`, `map_node_done`, `map_node_locked`.
+- Ids de sprite: `player`, `ada`, `owl`, `byte_cat`, `gremlin_sintaxis`, `fantasma_sin_nombre`, `quimera_tipos`, `ouroboros`, `jar`, `cauldron`, `grimoire`, `teacup`, `candle_books`, `house_locked`, `house_open`, `house_done`, `tile_grass`, `tile_path`, `tile_water`, `tree`, `map_node`, `map_node_done`, `map_node_locked`, `guardian_puerta`, `crystal_ball` (más `candle_books_lit` y `star`).
 - Paleta fija: ver `docs/DISENO.md`. El dorado es solo para recompensas, el rojo solo para errores y enemigos, el turquesa es éxito.
 
 ## Flujo de trabajo

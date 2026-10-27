@@ -66,3 +66,32 @@ static func check(round: Dictionary, choices: Array) -> Dictionary:
 		out["creature"] = "cauldron"
 		out["message"] = "Tu hechizo imprimió %s, pero tenía que imprimir %s." % [r["output"] if r["output"] != "" else "nada", round["output"]]
 	return out
+
+
+# --- Bola de cristal: predecir qué imprime un código --------------------------
+
+## Lo que el código imprime de verdad (la respuesta correcta sale de ejecutarlo).
+static func prediction_answer(round: Dictionary) -> String:
+	return str(PyEval.run(round["code"])["output"])
+
+
+static func check_prediction(round: Dictionary, choice: String) -> Dictionary:
+	var out := {"status": "", "title": "", "message": "", "detail": "", "creature": "", "output": ""}
+	var r := PyEval.run(round["code"])
+	out["output"] = r["output"]
+	if not r["ok"]:
+		out["status"] = "error"
+		out["title"] = "La bola se nubló"
+		out["creature"] = "crystal_ball"
+		out["detail"] = r["message"]
+		return out
+	if choice == r["output"]:
+		out["status"] = "success"
+		out["title"] = "¡Lo viste venir!"
+		out["message"] = "El hechizo imprime: %s" % r["output"]
+	else:
+		out["status"] = "wrong"
+		out["title"] = "La bola mostraba otra cosa"
+		out["creature"] = "crystal_ball"
+		out["message"] = "Elegiste «%s», pero el hechizo imprime «%s». Seguí las condiciones de arriba hacia abajo." % [choice.replace("\n", " / "), str(r["output"]).replace("\n", " / ")]
+	return out

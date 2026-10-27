@@ -18,6 +18,7 @@ var cauldron_expr: Label
 var cauldron_result: Label
 var code_label: Label
 var tray: DropSlot
+var crossroads: CrossroadsView
 var _op_label: Label
 var _chip_row: HFlowContainer
 
@@ -43,7 +44,7 @@ func _build() -> void:
 	var names := FrascoLogic.jar_names(puzzle)
 	for i in names.size():
 		row.add_child(_jar_view(i))
-		if i == 0 and names.size() == 2:
+		if i == 0 and names.size() == 2 and not FrascoLogic.is_crossroads(puzzle):
 			_op_label = UI.label("", "CodeLabel", HORIZONTAL_ALIGNMENT_CENTER)
 			_op_label.custom_minimum_size = Vector2(48, 0)
 			_op_label.add_theme_font_size_override("font_size", 40)
@@ -51,7 +52,11 @@ func _build() -> void:
 	var arrow := UI.label("→", "CodeLabel")
 	arrow.add_theme_font_size_override("font_size", 40)
 	row.add_child(arrow)
-	row.add_child(_cauldron_view())
+	if FrascoLogic.is_crossroads(puzzle):
+		crossroads = CrossroadsView.new(puzzle)
+		row.add_child(crossroads)
+	else:
+		row.add_child(_cauldron_view())
 
 	# Selector de operador
 	if FrascoLogic.needs_operator_choice(puzzle):
@@ -65,7 +70,9 @@ func _build() -> void:
 			b.toggle_mode = true
 			b.button_group = group
 			b.focus_mode = Control.FOCUS_NONE
-			b.name = "Op_" + {"+": "suma", "-": "resta", "*": "por", "==": "igual"}.get(str(o), "otro")
+			b.name = "Op_" + {"+": "suma", "-": "resta", "*": "por", "==": "igual", "!=": "distinto",
+				"<": "menor", ">": "mayor", "<=": "menor_igual", ">=": "mayor_igual",
+				"and": "and", "or": "or"}.get(str(o), "otro")
 			b.pressed.connect(set_operator.bind(str(o)))
 			ops_row.add_child(b)
 			op_buttons[str(o)] = b
@@ -203,6 +210,9 @@ func values() -> Dictionary:
 
 func cast() -> Dictionary:
 	var r := FrascoLogic.check(puzzle, values(), op)
+	if crossroads:
+		crossroads.highlight(r.get("path"), r["status"] == "success")
+		return r
 	if r["value"] != null or r["status"] == "success":
 		cauldron_result.text = "= " + PyEval.repr(r["value"])
 	else:
@@ -230,10 +240,15 @@ func refresh() -> void:
 		else:
 			slots[i].show_token("")
 			slots[i].drag_payload = {}
+	if crossroads:
+		crossroads.set_operator(op)
+	else:
+		cauldron_expr.text = FrascoLogic.resolve(puzzle, op if op != "" else "?")
+		cauldron_result.text = ""
 	var expr := FrascoLogic.resolve(puzzle, op if op != "" else "?")
-	cauldron_expr.text = expr
-	cauldron_result.text = ""
+	# Entre los dos frascos se ve el operador si la expresión es "a op b".
 	if _op_label and names.size() == 2:
-		_op_label.text = expr.replace(names[0], "").replace(names[1], "").strip_edges()
+		var parts := expr.split(" ")
+		_op_label.text = parts[1] if parts.size() == 3 and parts[0] == names[0] and parts[2] == names[1] else ""
 	code_label.text = "\n".join(FrascoLogic.code_lines(puzzle, values(), op))
 	changed.emit()

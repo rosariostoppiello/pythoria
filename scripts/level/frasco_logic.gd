@@ -2,6 +2,8 @@ class_name FrascoLogic
 extends RefCounted
 ## Reglas de la mecánica del Frasco, sin interfaz (las usan la escena y los tests).
 ## Un "puzzle" es un nivel o una ronda de boss: goal, jars, tokens, operators, expression.
+## La Encrucijada (mechanic = "encrucijada") usa los mismos frascos, pero en vez de un
+## caldero tiene ramas if/elif/else ("branches") y gana si `variable` termina en goal.
 
 const OP_PLACEHOLDER := "OP"
 
@@ -44,8 +46,44 @@ static func operators(puzzle: Dictionary) -> Array:
 	return puzzle.get("operators", [])
 
 
+static func is_crossroads(puzzle: Dictionary) -> bool:
+	return str(puzzle.get("mechanic", "")) == "encrucijada"
+
+
+## Variable que asignan las ramas de la Encrucijada.
+static func variable(puzzle: Dictionary) -> String:
+	return str(puzzle.get("variable", "camino"))
+
+
+static func branches(puzzle: Dictionary) -> Array:
+	return puzzle.get("branches", [])
+
+
+## Código if/elif/else de la Encrucijada (op reemplaza a OP en las condiciones).
+static func branch_lines(puzzle: Dictionary, op: String) -> PackedStringArray:
+	var lines: PackedStringArray = []
+	var bs := branches(puzzle)
+	for i in bs.size():
+		var b: Dictionary = bs[i]
+		var assign := "    %s = %s" % [variable(puzzle), PyEval.repr(str(b["path"]))]
+		if not b.has("cond"):
+			lines.append("else:")
+		else:
+			var cond := str(b["cond"]).replace(OP_PLACEHOLDER, op if op != "" else "?")
+			lines.append("%s %s:" % ["if" if i == 0 else "elif", cond])
+		lines.append(assign)
+	return lines
+
+
 ## Expresión del caldero. Si el JSON no la trae: "a OP b" (o solo el frasco).
+## En la Encrucijada son todas las condiciones juntas.
 static func expression(puzzle: Dictionary) -> String:
+	if is_crossroads(puzzle):
+		var conds: PackedStringArray = []
+		for b: Dictionary in branches(puzzle):
+			if b.has("cond"):
+				conds.append(str(b["cond"]))
+		return " ; ".join(conds)
 	if puzzle.has("expression"):
 		return str(puzzle["expression"])
 	var names := jar_names(puzzle)
@@ -75,6 +113,9 @@ static func code_lines(puzzle: Dictionary, values: Dictionary, op: String) -> Pa
 			lines.append("%s = %s" % [name, PyEval.repr(values[name])])
 		else:
 			lines.append("# %s está vacío" % name)
+	if is_crossroads(puzzle):
+		lines.append_array(branch_lines(puzzle, op))
+		return lines
 	var expr := resolve(puzzle, op)
 	if needs_operator_choice(puzzle) and op == "":
 		expr = expression(puzzle).replace(OP_PLACEHOLDER, "?")
@@ -94,7 +135,13 @@ static func check(puzzle: Dictionary, values: Dictionary, op: String) -> Diction
 		out["detail"] = "SyntaxError: falta el operador"
 		out["message"] = "Elegí un operador para combinar los frascos."
 		return out
-	var r := evaluate(puzzle, values, op)
+	var r: Dictionary
+	if is_crossroads(puzzle):
+		r = PyEval.run(Array(branch_lines(puzzle, op)), values)
+		if r["ok"]:
+			r["value"] = r["env"].get(variable(puzzle))
+	else:
+		r = evaluate(puzzle, values, op)
 	if not r["ok"]:
 		match r["error"]:
 			"TypeError":
@@ -108,7 +155,7 @@ static func check(puzzle: Dictionary, values: Dictionary, op: String) -> Diction
 				out["creature"] = "fantasma_sin_nombre"
 				var missing := _missing_jar(puzzle, values)
 				out["message"] = "El frasco %s está vacío: poné una ficha antes de lanzar." % missing if missing != "" else "Usaste un nombre que no existe."
-			"SyntaxError":
+			"SyntaxError", "IndentationError":
 				out["status"] = "syntax_error"
 				out["title"] = "¡El Gremlin Sintaxis!"
 				out["creature"] = "gremlin_sintaxis"
@@ -121,6 +168,24 @@ static func check(puzzle: Dictionary, values: Dictionary, op: String) -> Diction
 		out["detail"] = r["message"]
 		return out
 	out["value"] = r["value"]
+	if is_crossroads(puzzle):
+		out["path"] = r["value"]
+		if r["value"] == null:
+			out["status"] = "wrong"
+			out["title"] = "Ningún camino se abrió"
+			out["creature"] = "guardian_puerta"
+			out["message"] = "Ninguna condición fue verdadera y no hay else: el Guardián no te deja pasar."
+			return out
+		if matches_goal(r["value"], puzzle):
+			out["status"] = "success"
+			out["title"] = "¡Llegaste!"
+			out["message"] = "El Guardián te abrió el camino a %s." % PyEval.to_str(r["value"])
+		else:
+			out["status"] = "wrong"
+			out["title"] = "Camino equivocado"
+			out["creature"] = "guardian_puerta"
+			out["message"] = "El Guardián te mandó a %s, pero tenías que llegar a %s." % [PyEval.to_str(r["value"]), PyEval.to_str(expected)]
+		return out
 	if matches_goal(r["value"], puzzle):
 		out["status"] = "success"
 		out["title"] = "¡Hechizo logrado!"

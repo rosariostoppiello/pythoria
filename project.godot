@@ -14,11 +14,11 @@ config/name="Pythoria"
 config/description="PyMancer: La Academia del Grimorio"
 run/main_scene="res://scenes/main_menu/main_menu.tscn"
 config/features=PackedStringArray("4.7", "GL Compatibility")
-config/icon="res://assets/sprites/player.png"
 boot_splash/bg_color=Color(0.117647, 0.105882, 0.227451, 1)
-boot_splash/image="res://assets/sprites/grimoire.png"
-boot_splash/fullsize=false
+boot_splash/stretch_mode=0
 boot_splash/use_filter=false
+boot_splash/image="res://assets/sprites/grimoire.png"
+config/icon="res://assets/sprites/player.png"
 
 [autoload]
 
@@ -32,7 +32,6 @@ SceneManager="*res://scripts/core/scene_manager.gd"
 window/size/viewport_width=1280
 window/size/viewport_height=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
 
 [gui]
 
@@ -40,7 +39,7 @@ theme/custom="res://resources/ui_theme.tres"
 
 [rendering]
 
+textures/canvas_textures/default_texture_filter=0
 renderer/rendering_method="gl_compatibility"
 renderer/rendering_method.mobile="gl_compatibility"
-textures/canvas_textures/default_texture_filter=0
 environment/defaults/default_clear_color=Color(0.117647, 0.105882, 0.227451, 1)

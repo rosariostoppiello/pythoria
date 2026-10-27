@@ -186,6 +186,8 @@
         "id": "w1_boss",
         "enemy": "gremlin_sintaxis",
         "title": "El Gremlin Sintaxis",
+        "taunt": "El Gremlin anda robando paréntesis. Acertá cada hechizo para bajarle la vida.",
+        "victory": "El valle vuelve a estar en calma. Se abre el camino al siguiente mundo.",
         "rounds": [
           {
             "goal": {"value": 10, "type": "int"},
@@ -215,7 +217,7 @@
       "id": 2,
       "name": "Bosque de las Encrucijadas",
       "color": "#B5702A",
-      "status": "placeholder",
+      "status": "playable",
       "topics": ["booleanos", "comparaciones", "if/elif/else", "operadores lógicos"],
       "story": "Un bosque lleno de caminos donde un guardián decide quién pasa según una condición.",
       "boss": "guardian_puerta",
@@ -231,8 +233,203 @@
           {"id": "w2_boss", "kind": "boss", "pos": [21, 5]}
         ]
       },
-      "levels": [],
-      "placeholder_note": "Las casitas se abren y muestran 'Próximamente' con el botón de marcar como completado solo en modo debug."
+      "levels": [
+        {
+          "id": "w2_l1",
+          "title": "¿Más o menos?",
+          "mechanic": "frasco",
+          "story": "El Guardián del bosque solo deja pasar si tu poder supera el límite del portón. El caldero pide True.",
+          "goal": {"value": true, "type": "bool"},
+          "jars": [
+            {"name": "poder", "accepts": "int"},
+            {"name": "limite", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 8, "type": "int"},
+            {"value": 5, "type": "int"},
+            {"value": 3, "type": "int"}
+          ],
+          "operators": [">", "<"],
+          "expression": "poder OP limite",
+          "solution_any": [
+            {"poder": 8, "limite": 5, "op": ">"},
+            {"poder": 5, "limite": 8, "op": "<"}
+          ],
+          "hints": [
+            "> pregunta si lo de la izquierda es más grande. Siempre da True o False.",
+            "Para que poder > limite sea True, poder tiene que ser el número más grande.",
+            "Probá poder = 8, limite = 5 y el operador >."
+          ]
+        },
+        {
+          "id": "w2_l2",
+          "title": "Un hechizo de duda",
+          "mechanic": "frasco",
+          "story": "Un hongo parlante te pide lo contrario: el caldero tiene que dar False.",
+          "goal": {"value": false, "type": "bool"},
+          "jars": [
+            {"name": "a", "accepts": "int"},
+            {"name": "b", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 4, "type": "int"},
+            {"value": 4, "type": "int"},
+            {"value": 7, "type": "int"}
+          ],
+          "operators": ["!=", ">="],
+          "expression": "a OP b",
+          "solution_any": [
+            {"a": 4, "b": 4, "op": "!="},
+            {"a": 4, "b": 7, "op": ">="}
+          ],
+          "hints": [
+            "!= significa 'distinto de'. >= significa 'mayor o igual que'.",
+            "4 != 4 es False, porque los dos son iguales.",
+            "Poné un 4 en cada frasco y usá !=. O probá 4 >= 7."
+          ]
+        },
+        {
+          "id": "w2_l3",
+          "title": "Llave y mapa",
+          "mechanic": "frasco",
+          "story": "El portón viejo se abre con la llave y el mapa... pero solo encontraste uno de los dos. ¿Qué operador te alcanza?",
+          "goal": {"value": true, "type": "bool"},
+          "jars": [
+            {"name": "llave", "accepts": "bool"},
+            {"name": "mapa", "accepts": "bool"}
+          ],
+          "tokens": [
+            {"value": true, "type": "bool"},
+            {"value": false, "type": "bool"}
+          ],
+          "operators": ["and", "or"],
+          "expression": "llave OP mapa",
+          "solution_any": [
+            {"llave": true, "mapa": false, "op": "or"},
+            {"llave": false, "mapa": true, "op": "or"}
+          ],
+          "hints": [
+            "and pide que los dos sean True. or se conforma con uno.",
+            "Tenés un True y un False: and daría False.",
+            "Poné True y False en los frascos y usá or."
+          ]
+        },
+        {
+          "id": "w2_l4",
+          "title": "La encrucijada",
+          "mechanic": "encrucijada",
+          "story": "El camino se divide en tres. El Guardián decide a dónde vas según tu poder. Tenés que llegar a la cueva.",
+          "goal": {"value": "cueva", "type": "str"},
+          "variable": "camino",
+          "jars": [
+            {"name": "poder", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 7, "type": "int"},
+            {"value": 4, "type": "int"},
+            {"value": 1, "type": "int"}
+          ],
+          "operators": [],
+          "branches": [
+            {"cond": "poder > 5", "path": "puente"},
+            {"cond": "poder > 2", "path": "cueva"},
+            {"path": "río"}
+          ],
+          "solution": {"poder": 4},
+          "hints": [
+            "Python prueba las condiciones de arriba hacia abajo y entra en la primera que da True.",
+            "Para llegar a la cueva, poder > 5 tiene que dar False pero poder > 2 tiene que dar True.",
+            "Un número entre 3 y 5: probá con 4."
+          ]
+        },
+        {
+          "id": "w2_l5",
+          "title": "Dos condiciones",
+          "mechanic": "encrucijada",
+          "story": "Para entrar al bosque profundo hace falta edad y mapa. Hoy solo querés llegar a la aldea.",
+          "goal": {"value": "aldea", "type": "str"},
+          "variable": "camino",
+          "jars": [
+            {"name": "edad", "accepts": "int"},
+            {"name": "tiene_mapa", "accepts": "bool"}
+          ],
+          "tokens": [
+            {"value": 15, "type": "int"},
+            {"value": 9, "type": "int"},
+            {"value": true, "type": "bool"},
+            {"value": false, "type": "bool"}
+          ],
+          "operators": [],
+          "branches": [
+            {"cond": "edad >= 12 and tiene_mapa", "path": "bosque profundo"},
+            {"cond": "edad >= 12", "path": "aldea"},
+            {"path": "casa"}
+          ],
+          "solution": {"edad": 15, "tiene_mapa": false},
+          "hints": [
+            "and solo da True si las dos partes son True.",
+            "Para la aldea, la primera condición tiene que fallar y la segunda no.",
+            "edad = 15 y tiene_mapa = False."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w2_mini",
+        "kind": "bola_de_cristal",
+        "title": "Bola de cristal",
+        "rounds": [
+          {
+            "code": ["poder = 7", "if poder > 5:", "    print('fuerte')", "else:", "    print('débil')"],
+            "options": ["fuerte", "débil", "fuerte\ndébil"]
+          },
+          {
+            "code": ["x = 3", "if x == 5:", "    print('cinco')", "elif x < 5:", "    print('menos')", "else:", "    print('más')"],
+            "options": ["cinco", "menos", "más"]
+          },
+          {
+            "code": ["llueve = False", "paraguas = True", "if llueve and not paraguas:", "    print('me mojo')", "else:", "    print('seco')"],
+            "options": ["me mojo", "seco", "nada"]
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w2_boss",
+        "enemy": "guardian_puerta",
+        "title": "El Guardián de la Puerta",
+        "taunt": "Nadie cruza mi puerta sin una condición verdadera. Acertá cada hechizo para bajarle la guardia.",
+        "victory": "La puerta se abre de par en par. Más allá del bosque se ve la Torre de los Rituales.",
+        "rounds": [
+          {
+            "goal": {"value": true, "type": "bool"},
+            "jars": [{"name": "a", "accepts": "int"}, {"name": "b", "accepts": "int"}],
+            "tokens": [{"value": 10, "type": "int"}, {"value": 3, "type": "int"}, {"value": "10", "type": "str"}],
+            "operators": [">=", "=="],
+            "solution_any": [{"a": 10, "b": 3, "op": ">="}]
+          },
+          {
+            "goal": {"value": true, "type": "bool"},
+            "jars": [{"name": "abierto", "accepts": "bool"}, {"name": "llave", "accepts": "bool"}],
+            "tokens": [{"value": true, "type": "bool"}, {"value": false, "type": "bool"}],
+            "operators": ["and", "or"],
+            "expression": "not abierto OP llave",
+            "solution_any": [{"abierto": false, "llave": true, "op": "and"}, {"abierto": false, "llave": true, "op": "or"}]
+          },
+          {
+            "mechanic": "encrucijada",
+            "goal": {"value": "puerta", "type": "str"},
+            "variable": "camino",
+            "jars": [{"name": "nivel", "accepts": "int"}],
+            "tokens": [{"value": 2, "type": "int"}, {"value": 6, "type": "int"}, {"value": 9, "type": "int"}],
+            "operators": [],
+            "branches": [
+              {"cond": "nivel >= 8", "path": "torre"},
+              {"cond": "nivel >= 5", "path": "puerta"},
+              {"path": "muralla"}
+            ],
+            "solution": {"nivel": 6}
+          }
+        ]
+      }
     },
     {
       "id": 3,
@@ -255,7 +452,7 @@
         ]
       },
       "levels": [],
-      "placeholder_note": "Igual que el mundo 2."
+      "placeholder_note": "Las casitas se abren y muestran 'Próximamente' con el botón de marcar como completado solo en modo debug."
     },
     {"id": 4, "name": "Biblioteca de los Pergaminos", "color": "#8A3F7A", "status": "designed", "topics": ["strings", "listas", "tuplas", "slicing"], "boss": "espectro_indice", "levels": []},
     {"id": 5, "name": "Salón de las Runas", "color": "#7A4A3A", "status": "designed", "topics": ["diccionarios", "sets", "estructuras anidadas"], "boss": "archivista_caos", "levels": []},

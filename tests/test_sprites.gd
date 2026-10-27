@@ -3,7 +3,7 @@ extends TestCase
 const IDS := ["player", "ada", "owl", "byte_cat", "gremlin_sintaxis", "fantasma_sin_nombre",
 	"quimera_tipos", "ouroboros", "jar", "cauldron", "grimoire", "teacup", "candle_books",
 	"house_locked", "house_open", "house_done", "tile_grass", "tile_path", "tile_water", "tree",
-	"map_node", "map_node_done", "map_node_locked"]
+	"map_node", "map_node_done", "map_node_locked", "guardian_puerta", "crystal_ball"]
 
 
 func test_todos_los_sprites_existen() -> void:
