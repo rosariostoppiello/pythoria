@@ -27,8 +27,11 @@ func has_save() -> bool:
 func load_data() -> Dictionary:
 	if not has_save():
 		return defaults()
-	var text := FileAccess.get_file_as_string(save_path)
-	return sanitize(JSON.parse_string(text) if not text.is_empty() else null)
+	var json := JSON.new()
+	if json.parse(FileAccess.get_file_as_string(save_path)) != OK:
+		push_warning("Guardado ilegible, se usan valores por defecto: " + json.get_error_message())
+		return defaults()
+	return sanitize(json.data)
 
 
 func save_data(state: Dictionary) -> bool:

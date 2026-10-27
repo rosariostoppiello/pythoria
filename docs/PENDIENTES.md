@@ -15,3 +15,6 @@
 - **Jugar con partida guardada**: pide confirmación antes de borrar el progreso. "Continuar" aparece solo si existe `user://save.json`.
 - **Salir** no se muestra en la versión web (no se puede cerrar la pestaña desde el juego).
 - **Esc en el mapa de sección** también abre la pausa (con "Mapa de mundos" y "Menú").
+- **Pistas y XP**: cada pista baja la recompensa del nivel (50 − 10 por pista, mínimo 10); no se descuenta XP ya ganado. Máximo 3 pistas por nivel. El minijuego y el boss no tienen pistas y dan 100 y 200 XP.
+- **Racha**: se actualiza al resolver cualquier casita (aunque sea repetida), comparando la fecha local `YYYY-MM-DD` con `last_played_day`.
+- **Guardado ilegible** (JSON roto): se ignora con un aviso y se arranca con valores por defecto; el archivo se reescribe en el próximo guardado.
