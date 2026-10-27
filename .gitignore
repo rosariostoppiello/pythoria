@@ -1,0 +1,18 @@
+# Godot
+.godot/
+/android/
+*.translation
+export_credentials.cfg
+*.tmp
+
+# Builds
+build/
+
+# OS / editores
+.DS_Store
+*.swp
+__pycache__/
+*.pyc
+
+# Configuración local de Claude Code
+.claude/settings.local.json

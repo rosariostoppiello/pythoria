@@ -1,0 +1,278 @@
+{
+  "version": 1,
+  "xp": {
+    "per_level": 50,
+    "hint_cost": 10,
+    "min_per_level": 10,
+    "minigame": 100,
+    "boss": 200
+  },
+  "worlds": [
+    {
+      "id": 1,
+      "name": "Valle de los Frascos",
+      "color": "#4E7D4B",
+      "status": "playable",
+      "topics": ["print", "input", "variables", "tipos", "operadores", "f-strings"],
+      "story": "Un valle tranquilo donde cada esencia vive en un frasco. El Gremlin Sintaxis anda robando paréntesis y hay que detenerlo.",
+      "boss": "gremlin_sintaxis",
+      "section_map": {
+        "player_start": [2, 8],
+        "houses": [
+          {"id": "w1_l1", "kind": "level", "pos": [3, 6]},
+          {"id": "w1_l2", "kind": "level", "pos": [6, 7]},
+          {"id": "w1_l3", "kind": "level", "pos": [9, 5]},
+          {"id": "w1_l4", "kind": "level", "pos": [12, 7]},
+          {"id": "w1_l5", "kind": "level", "pos": [15, 5]},
+          {"id": "w1_mini", "kind": "minigame", "pos": [18, 7]},
+          {"id": "w1_boss", "kind": "boss", "pos": [21, 5]}
+        ]
+      },
+      "levels": [
+        {
+          "id": "w1_l1",
+          "title": "Tu primer frasco",
+          "mechanic": "frasco",
+          "story": "Ada te da dos frascos vacíos. El caldero necesita un poder de 8.",
+          "goal": {"value": 8, "type": "int"},
+          "jars": [
+            {"name": "poder", "accepts": "int"},
+            {"name": "bonus", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 5, "type": "int"},
+            {"value": 3, "type": "int"},
+            {"value": 9, "type": "int"}
+          ],
+          "operators": ["+"],
+          "expression": "poder + bonus",
+          "solution": {"poder": 5, "bonus": 3},
+          "hints": [
+            "Un frasco guarda un valor. Pensá qué dos números suman 8.",
+            "Poné un número en poder y otro en bonus, y combinalos con +.",
+            "poder = 5 y bonus = 3 dan 8. Probá con esos."
+          ]
+        },
+        {
+          "id": "w1_l2",
+          "title": "Esencias de texto",
+          "mechanic": "frasco",
+          "story": "El caldero pide un saludo: 'Hola Ada'. Cuidado, las esencias de distinto tipo no se mezclan.",
+          "goal": {"value": "Hola Ada", "type": "str"},
+          "jars": [
+            {"name": "saludo", "accepts": "str"},
+            {"name": "nombre", "accepts": "str"}
+          ],
+          "tokens": [
+            {"value": "Hola ", "type": "str"},
+            {"value": "Ada", "type": "str"},
+            {"value": 7, "type": "int"}
+          ],
+          "operators": ["+"],
+          "expression": "saludo + nombre",
+          "solution": {"saludo": "Hola ", "nombre": "Ada"},
+          "hints": [
+            "Los textos van entre comillas y se pueden unir con +.",
+            "Ponés 'Hola ' (con espacio) en saludo y 'Ada' en nombre.",
+            "El número 7 no es un texto: no sirve acá."
+          ]
+        },
+        {
+          "id": "w1_l3",
+          "title": "El poder de multiplicar",
+          "mechanic": "frasco",
+          "story": "Esta vez el caldero pide 12 y tenés más de un operador para elegir.",
+          "goal": {"value": 12, "type": "int"},
+          "jars": [
+            {"name": "a", "accepts": "int"},
+            {"name": "b", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 3, "type": "int"},
+            {"value": 4, "type": "int"},
+            {"value": 2, "type": "int"},
+            {"value": 8, "type": "int"}
+          ],
+          "operators": ["+", "-", "*"],
+          "expression": "a OP b",
+          "solution_any": [
+            {"a": 3, "b": 4, "op": "*"},
+            {"a": 4, "b": 3, "op": "*"},
+            {"a": 8, "b": 4, "op": "+"},
+            {"a": 4, "b": 8, "op": "+"}
+          ],
+          "hints": [
+            "Cada operador cambia el resultado. Probá con distintos.",
+            "Hay más de una manera de llegar a 12.",
+            "3 * 4 da 12. También 8 + 4."
+          ]
+        },
+        {
+          "id": "w1_l4",
+          "title": "Verdadero o falso",
+          "mechanic": "frasco",
+          "story": "El Guardia del valle solo deja pasar si el caldero resulta verdadero.",
+          "goal": {"value": true, "type": "bool"},
+          "jars": [
+            {"name": "izquierda", "accepts": "int"},
+            {"name": "derecha", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 7, "type": "int"},
+            {"value": 7, "type": "int"},
+            {"value": 5, "type": "int"}
+          ],
+          "operators": ["==", "+"],
+          "expression": "izquierda OP derecha",
+          "solution_any": [
+            {"izquierda": 7, "derecha": 7, "op": "=="}
+          ],
+          "hints": [
+            "== compara dos valores y devuelve verdadero o falso.",
+            "Para que sea verdadero, los dos lados tienen que valer lo mismo.",
+            "Poné un 7 en cada frasco y usá ==."
+          ]
+        },
+        {
+          "id": "w1_l5",
+          "title": "Bienvenido, aprendiz",
+          "mechanic": "frasco",
+          "story": "Un f-string arma un mensaje con el valor de un frasco. El caldero pide: 'Bienvenido, Ada'.",
+          "goal": {"value": "Bienvenido, Ada", "type": "str"},
+          "jars": [
+            {"name": "nombre", "accepts": "str"}
+          ],
+          "tokens": [
+            {"value": "Ada", "type": "str"},
+            {"value": "Byte", "type": "str"},
+            {"value": 3, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "f\"Bienvenido, {nombre}\"",
+          "solution": {"nombre": "Ada"},
+          "hints": [
+            "El f-string reemplaza {nombre} por lo que tenga el frasco.",
+            "Ponele al frasco nombre el texto que el caldero pide.",
+            "nombre = 'Ada'."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w1_mini",
+        "kind": "completa_el_hechizo",
+        "title": "Completa el hechizo",
+        "rounds": [
+          {
+            "code": ["____ = 5", "print(poder)"],
+            "blanks": ["poder"],
+            "tokens": ["poder", "5", "'hola'"],
+            "output": "5"
+          },
+          {
+            "code": ["nombre = ____", "print(f\"Hola, {nombre}\")"],
+            "blanks": ["'Ada'"],
+            "tokens": ["'Ada'", "Ada", "3"],
+            "output": "Hola, Ada"
+          },
+          {
+            "code": ["a = 4", "b = 3", "print(a ____ b)"],
+            "blanks": ["*"],
+            "tokens": ["*", "+", "=="],
+            "output": "12"
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w1_boss",
+        "enemy": "gremlin_sintaxis",
+        "title": "El Gremlin Sintaxis",
+        "rounds": [
+          {
+            "goal": {"value": 10, "type": "int"},
+            "jars": [{"name": "x", "accepts": "int"}, {"name": "y", "accepts": "int"}],
+            "tokens": [{"value": 6, "type": "int"}, {"value": 4, "type": "int"}, {"value": "6", "type": "str"}],
+            "operators": ["+", "-"],
+            "solution_any": [{"x": 6, "y": 4, "op": "+"}, {"x": 4, "y": 6, "op": "+"}]
+          },
+          {
+            "goal": {"value": "Hola Byte", "type": "str"},
+            "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "str"}],
+            "tokens": [{"value": "Hola ", "type": "str"}, {"value": "Byte", "type": "str"}, {"value": 2, "type": "int"}],
+            "operators": ["+"],
+            "solution_any": [{"a": "Hola ", "b": "Byte", "op": "+"}]
+          },
+          {
+            "goal": {"value": true, "type": "bool"},
+            "jars": [{"name": "p", "accepts": "int"}, {"name": "q", "accepts": "int"}],
+            "tokens": [{"value": 3, "type": "int"}, {"value": 3, "type": "int"}, {"value": 9, "type": "int"}],
+            "operators": ["==", "*"],
+            "solution_any": [{"p": 3, "q": 3, "op": "=="}]
+          }
+        ]
+      }
+    },
+    {
+      "id": 2,
+      "name": "Bosque de las Encrucijadas",
+      "color": "#B5702A",
+      "status": "placeholder",
+      "topics": ["booleanos", "comparaciones", "if/elif/else", "operadores lógicos"],
+      "story": "Un bosque lleno de caminos donde un guardián decide quién pasa según una condición.",
+      "boss": "guardian_puerta",
+      "section_map": {
+        "player_start": [2, 8],
+        "houses": [
+          {"id": "w2_l1", "kind": "level", "pos": [3, 6]},
+          {"id": "w2_l2", "kind": "level", "pos": [6, 7]},
+          {"id": "w2_l3", "kind": "level", "pos": [9, 5]},
+          {"id": "w2_l4", "kind": "level", "pos": [12, 7]},
+          {"id": "w2_l5", "kind": "level", "pos": [15, 5]},
+          {"id": "w2_mini", "kind": "minigame", "pos": [18, 7]},
+          {"id": "w2_boss", "kind": "boss", "pos": [21, 5]}
+        ]
+      },
+      "levels": [],
+      "placeholder_note": "Las casitas se abren y muestran 'Próximamente' con el botón de marcar como completado solo en modo debug."
+    },
+    {
+      "id": 3,
+      "name": "Torre de los Rituales",
+      "color": "#3F6FB5",
+      "status": "placeholder",
+      "topics": ["while", "for", "range", "break", "continue"],
+      "story": "Una torre donde cada piso es un ritual que se repite, y arriba espera Ouroboros.",
+      "boss": "ouroboros",
+      "section_map": {
+        "player_start": [2, 8],
+        "houses": [
+          {"id": "w3_l1", "kind": "level", "pos": [3, 6]},
+          {"id": "w3_l2", "kind": "level", "pos": [6, 7]},
+          {"id": "w3_l3", "kind": "level", "pos": [9, 5]},
+          {"id": "w3_l4", "kind": "level", "pos": [12, 7]},
+          {"id": "w3_l5", "kind": "level", "pos": [15, 5]},
+          {"id": "w3_mini", "kind": "minigame", "pos": [18, 7]},
+          {"id": "w3_boss", "kind": "boss", "pos": [21, 5]}
+        ]
+      },
+      "levels": [],
+      "placeholder_note": "Igual que el mundo 2."
+    },
+    {"id": 4, "name": "Biblioteca de los Pergaminos", "color": "#8A3F7A", "status": "designed", "topics": ["strings", "listas", "tuplas", "slicing"], "boss": "espectro_indice", "levels": []},
+    {"id": 5, "name": "Salón de las Runas", "color": "#7A4A3A", "status": "designed", "topics": ["diccionarios", "sets", "estructuras anidadas"], "boss": "archivista_caos", "levels": []},
+    {"id": 6, "name": "Taller de Embrujos", "color": "#B5547A", "status": "designed", "topics": ["funciones", "parámetros", "return", "scope"], "boss": "hechicero_espagueti", "levels": []},
+    {"id": 7, "name": "Catacumbas de los Errores", "color": "#5A6270", "status": "designed", "topics": ["try/except", "archivos"], "boss": "hechizo_rebotado", "levels": []},
+    {"id": 8, "name": "Cámara de los Espejos", "color": "#3A8A9A", "status": "designed", "topics": ["recursión"], "boss": "espejo_infinito", "levels": []}
+  ],
+  "world_map": {
+    "nodes": [
+      {"world": 1, "pos": [160, 560]},
+      {"world": 2, "pos": [360, 440]},
+      {"world": 3, "pos": [560, 560]},
+      {"world": 4, "pos": [760, 440]},
+      {"world": 5, "pos": [960, 560]},
+      {"world": 6, "pos": [1080, 380]},
+      {"world": 7, "pos": [880, 260]},
+      {"world": 8, "pos": [640, 160]}
+    ]
+  }
+}
