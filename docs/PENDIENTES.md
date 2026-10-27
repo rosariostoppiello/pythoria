@@ -23,3 +23,5 @@
 - **Texturas en `_draw()`**: con el renderer de compatibilidad de Godot 4.7, una textura cargada dentro del primer `_draw()` se pinta blanca. Se cargan en `_ready()` y se redibuja un frame después.
 - **Mapa de mundos**: la línea punteada se dibuja con `_draw()` (puntos cada 18 px), en lavanda hasta donde llegaste y gris después. `current_world` del guardado es donde está parado el aprendiz; si es menor que el último mundo desbloqueado (porque venciste un boss), al abrir el mapa camina por la línea hasta el nuevo nodo, que aparece con un "pop", y se guarda.
 - **Mundos 4 a 8**: si se llegaran a desbloquear (solo posible con el botón debug), se muestran como "Próximamente" y no se puede entrar porque no tienen casitas en el JSON.
+- **Casitas de boss**: el techo se tiñe rojizo cuando están disponibles, para distinguirlas (sin sprite extra).
+- **Casitas de mundos placeholder** (2 y 3): abren "Próximamente" con los temas del mundo; el botón "Completar (debug)" solo existe si `OS.is_debug_build()` (en el editor sí, en un export release no).
