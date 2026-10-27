@@ -8,3 +8,6 @@
 - **Acciones de entrada** (`move_*`, `interact`, `pause`) se registran en código en `SceneManager._setup_inputs()` en vez de en `project.godot`, para no depender del editor.
 - **Interfaz armada en código**: las escenas `.tscn` tienen solo el nodo raíz con su script; la interfaz se construye en `_ready()` con los helpers de `scripts/ui/ui.gd` y el tema central. Es más fácil de mantener sin el editor y garantiza que no haya colores sueltos en escenas.
 - **Tests**: runner propio (`tests/run_tests.gd`) en vez de GUT, sin dependencias externas. `tools/check.sh` corre el import y los tests.
+- **Paleta del pixel art**: además de los 8 colores fijos se usan los colores de mundo de `data/worlds.json` (verde, naranja, azul, marrón, gris) para naturaleza y detalles (pasto, árboles, agua, gato, libros). Dorado solo en recompensas (estrella, banda del sombrero, nodo completado), rojo solo en criaturas del Caos.
+- **Sprites extra** además de los de CLAUDE.md: `candle_books_lit` (vela encendida para las pistas) y `star` (recompensa en la pantalla de resultado).
+- **Filtro nearest** global en `project.godot` (`default_texture_filter=0`) para que todo el pixel art se vea nítido.
