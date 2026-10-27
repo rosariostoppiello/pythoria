@@ -1,5 +1,5 @@
 extends TestCase
-## Escenas de nivel, boss y minijuego jugadas de punta a punta.
+## Escenas de nivel, boss y minijuegos jugadas de punta a punta.
 
 var scene: Node
 
@@ -32,37 +32,42 @@ func _result() -> Node:
 	return scene.get_node_or_null("ResultOverlay")
 
 
-func test_nivel_1_exito() -> void:
+func _retry() -> void:
+	_result()._retry_now()
+	await tree.process_frame
+
+
+func _solution(p: Dictionary) -> String:
+	return "\n".join(PackedStringArray(p["solution"]))
+
+
+func test_frasco_exito() -> void:
 	await _open("w1_l1")
 	var board: FrascoBoard = scene.board
-	board.place(0, 0)  # 5
-	board.place(1, 1)  # 3
-	check_eq(board.code_label.text, "poder = 5\nbonus = 3\npoder + bonus", "código en vivo")
+	board.place(0, 0)  # a = 2
+	board.place(1, 1)  # b = 3
+	board.place(2, 2)  # c = 4
+	check_eq(board.code_label.text, "a = 2\nb = 3\nc = 4\na + b * c", "código en vivo")
 	var r: Dictionary = await scene.launch()
-	check_eq(r["status"], "success", "5 + 3 = 8")
+	check_eq(r["status"], "success", "2 + 3 * 4 = 14")
 	check(GameState.is_completed("w1_l1"), "nivel completado")
 	check_eq(GameState.xp, 50, "50 XP")
 	check(_result() != null and _result().info["success"], "pantalla de resultado con éxito")
-	check_eq(int(_result().info["xp"]), 50, "el resultado muestra el XP")
 
 
 func test_quimera_y_reintento_inmediato() -> void:
-	await _open("w1_l2")
+	await _open("w1_l1")
 	var board: FrascoBoard = scene.board
-	board.place(0, 0)  # 'Hola '
-	board.place(2, 1)  # 7
+	board.place(0, 0)  # 2
+	board.place(1, 1)  # 3
+	board.place(4, 2)  # '4'
 	var r: Dictionary = await scene.launch()
-	check_eq(r["status"], "type_error", "texto + número")
-	var res := _result()
-	check(res != null, "aparece el resultado")
-	if res:
-		check_eq(res.info["creature"], "quimera_tipos", "criatura de TypeError")
-		res._retry_now()
-		await tree.process_frame
-	check(_result() == null or _result().is_queued_for_deletion(), "el reintento cierra el resultado")
-	check_eq(board.values(), {"saludo": "Hola ", "nombre": 7}, "el tablero queda como estaba")
-	board.place(1, 1)  # 'Ada' reemplaza al 7, que vuelve a la bandeja
-	check(board.chips[2].visible, "el 7 volvió a la bandeja")
+	check_eq(r["status"], "type_error", "3 * '4' + 2")
+	check_eq(_result().info["creature"], "quimera_tipos", "criatura de TypeError")
+	await _retry()
+	check_eq(board.values(), {"a": 2, "b": 3, "c": "4"}, "el tablero queda como estaba")
+	board.place(2, 2)  # el 4 reemplaza al '4', que vuelve a la bandeja
+	check(board.chips[4].visible, "el '4' volvió a la bandeja")
 	r = await scene.launch()
 	check_eq(r["status"], "success", "segundo intento sin penalización")
 	check_eq(GameState.xp, 50, "XP completo tras reintentar")
@@ -72,8 +77,56 @@ func test_fantasma_con_frasco_vacio() -> void:
 	await _open("w1_l1")
 	scene.board.place(0, 0)
 	var r: Dictionary = await scene.launch()
-	check_eq(r["status"], "name_error", "frasco vacío")
+	check_eq(r["status"], "name_error", "frascos vacíos")
 	check_eq(_result().info["creature"], "fantasma_sin_nombre", "aparece el fantasma")
+
+
+func test_division_da_float() -> void:
+	await _open("w1_l2")
+	var board: FrascoBoard = scene.board
+	board.place(2, 0)  # 6
+	board.place(3, 1)  # 2
+	board.set_operator("/")
+	var r: Dictionary = await scene.launch()
+	check(str(r["message"]).contains("mismo valor, distinto tipo"), "6 / 2 es 3.0")
+	await _retry()
+	board.set_operator("//")
+	r = await scene.launch()
+	check_eq(r["status"], "success", "6 // 2")
+
+
+func test_escribir_codigo() -> void:
+	await _open("w1_l4")
+	check(scene.board is CodeBoard, "el nivel 4 es de escribir código")
+	check(scene._try.visible, "se ve el botón Probar")
+	var board: CodeBoard = scene.board
+	check(board.editor.text.contains("total = int(input())"), "arranca con el código inicial")
+	var r: Dictionary = await scene.launch()
+	check_eq(r["creature"], "fantasma_sin_nombre", "el código inicial usa variables sin definir")
+	await _retry()
+	var p := ContentDB.get_content("w1_l4")
+	board.editor.text = _solution(p)
+	var sample: Dictionary = board.run_sample()
+	check(sample["ok"], "Probar corre el caso 1")
+	check_eq(board.console.text, "1h 2m 5s", "la consola muestra la salida")
+	r = await scene.launch()
+	check_eq(r["status"], "success", "pasa todos los casos")
+	check(board.case_rows[0].text.begins_with("✓"), "el caso 1 queda marcado")
+	check_eq(GameState.xp, 80, "los niveles de código valen 80 XP")
+
+
+func test_codigo_que_falla_un_caso() -> void:
+	await _open("w2_l4")
+	var board: CodeBoard = scene.board
+	# Orden equivocado de los elif: nota 9 cae en "Aprobado".
+	board.editor.text = "nota = int(input())\nif nota >= 6:\n    print('Aprobado')\nelif nota >= 8:\n    print('Promoción')\nelif nota >= 4:\n    print('Examen')\nelse:\n    print('Recursa')"
+	var r: Dictionary = await scene.launch()
+	check_eq(r["status"], "wrong", "el orden de los elif importa")
+	check_eq(r["failed_case"], 0, "falla el caso 1 (nota 9)")
+	check(board.case_rows[0].text.begins_with("x"), "el caso 1 se marca con x")
+	check(board.console.text.contains("Aprobado"), "la consola muestra lo que imprimió")
+	board.clear()
+	check_eq(board.editor.text, CodeLogic.starter(ContentDB.get_content("w2_l4")), "Restaurar vuelve al código inicial")
 
 
 func test_pistas_de_ada() -> void:
@@ -82,31 +135,39 @@ func test_pistas_de_ada() -> void:
 	scene.request_hint()
 	check_eq(GameState.hints_for("w1_l3"), 1, "una pista usada")
 	check(scene._candle.texture == UI.tex("candle_books_lit"), "la vela se enciende")
+	check(scene._reward_label.text.contains("70"), "la recompensa baja a 70")
 	scene.request_hint()
 	scene.request_hint()
 	scene.request_hint()
 	check_eq(GameState.hints_for("w1_l3"), 3, "máximo 3 pistas")
 	check(scene._hint_button.disabled, "no hay más pistas")
-	check(scene._hint_label.text.contains("3 * 4"), "la tercera pista es la solución parcial")
+	check(scene._hint_label.text.contains("Pista 3 de 3"), "se ve la última pista")
+	scene._on_bubble_input(_click())
+	check(scene._hint_label.text.contains("Pista 1 de 3"), "tocando el globo se repasa la primera")
 	scene.queue_free()
 	await _open("w1_l3")
 	check_eq(scene._shown_hints, 3, "las pistas pagadas se vuelven a mostrar")
 	check_eq(GameState.hints_for("w1_l3"), 3, "sin cobrar de nuevo")
-	scene.board.place(0, 0)
-	scene.board.place(1, 1)
-	scene.board.set_operator("*")
+	scene.board.editor.text = _solution(ContentDB.get_content("w1_l3"))
 	await scene.launch()
-	check_eq(GameState.xp, 20, "50 - 3 pistas")
+	check_eq(GameState.xp, 50, "80 - 3 pistas")
+
+
+func _click() -> InputEventMouseButton:
+	var e := InputEventMouseButton.new()
+	e.button_index = MOUSE_BUTTON_LEFT
+	e.pressed = true
+	return e
 
 
 func test_drag_and_drop() -> void:
-	await _open("w1_l1")
+	await _open("w1_l2")
 	var board: FrascoBoard = scene.board
 	var chip: TokenChip = board.chips[1]
 	var data: Dictionary = chip._get_drag_data(Vector2.ZERO)
 	check(board.slots[0]._can_drop_data(Vector2.ZERO, data), "el frasco acepta la ficha")
 	board.slots[0]._drop_data(Vector2.ZERO, data)
-	check_eq(board.values(), {"poder": 3}, "la ficha cayó en poder")
+	check_eq(board.values(), {"total": 5}, "la ficha cayó en total")
 	check(not chip.visible, "la ficha salió de la bandeja")
 	var back: Dictionary = board.slots[0]._get_drag_data(Vector2.ZERO)
 	check(board.tray._can_drop_data(Vector2.ZERO, back), "la bandeja acepta fichas de un frasco")
@@ -117,8 +178,7 @@ func test_drag_and_drop() -> void:
 
 
 func _play_boss(world: int) -> void:
-	var ids := ContentDB.house_ids(world)
-	for id: String in ids:
+	for id: String in ContentDB.house_ids(world):
 		if not id.ends_with("_boss"):
 			GameState.completed.append(id)
 	if world > 1:
@@ -129,20 +189,24 @@ func _play_boss(world: int) -> void:
 	var rounds: Array = scene.content["rounds"]
 	for i in rounds.size():
 		check_eq(scene.round_idx, i, "ronda %d" % (i + 1))
-		var sol: Dictionary = FrascoLogic.solutions(rounds[i])[0]
-		var board: FrascoBoard = scene.board
-		var used: Array[int] = []
-		var names := FrascoLogic.jar_names(rounds[i])
-		for j in names.size():
-			for t in board.tokens.size():
-				if t in used:
-					continue
-				if PyEval.repr(FrascoLogic.token_value(board.tokens[t])) == PyEval.repr(sol["values"][names[j]]):
-					board.place(t, j)
-					used.append(t)
-					break
-		if sol["op"] != "":
-			board.set_operator(sol["op"])
+		var p: Dictionary = rounds[i]
+		if CodeLogic.is_code(p):
+			scene.board.editor.text = _solution(p)
+		else:
+			var sol: Dictionary = FrascoLogic.solutions(p)[0]
+			var board: FrascoBoard = scene.board
+			var used: Array[int] = []
+			var names := FrascoLogic.jar_names(p)
+			for j in names.size():
+				for t in board.tokens.size():
+					if t in used:
+						continue
+					if PyEval.repr(FrascoLogic.token_value(board.tokens[t])) == PyEval.repr(sol["values"][names[j]]):
+						board.place(t, j)
+						used.append(t)
+						break
+			if sol["op"] != "":
+				board.set_operator(sol["op"])
 		var r: Dictionary = await scene.launch()
 		check_eq(r["status"], "success", "mundo %d, ronda %d resuelta" % [world, i + 1])
 		await tree.process_frame
@@ -153,7 +217,7 @@ func _play_boss(world: int) -> void:
 	check(GameState.is_world_unlocked(world + 1), "se abre el mundo siguiente")
 
 
-func test_boss_tres_rondas() -> void:
+func test_boss_gremlin() -> void:
 	await _play_boss(1)
 
 
@@ -162,57 +226,50 @@ func test_boss_guardian() -> void:
 	check_eq(_result().info["message"], ContentDB.get_content("w2_boss")["victory"], "mensaje de victoria del JSON")
 
 
+func test_boss_ronda_de_codigo_falla() -> void:
+	GameState.completed.assign(["w1_l1", "w1_l2", "w1_l3", "w1_l4", "w1_l5", "w1_mini"])
+	await _open("w1_boss")
+	scene.round_idx = 1
+	scene._load_board()
+	await tree.process_frame
+	check(scene.board is CodeBoard, "la ronda 2 del Gremlin es de código")
+	var r: Dictionary = await scene.launch()
+	check_eq(r["creature"], "quimera_tipos", "el código roto del Gremlin suma texto y número")
+	check_eq(scene._health.value, 3.0, "un fallo no baja la vida")
+
+
 func test_encrucijada_en_escena() -> void:
-	GameState.completed.assign(["w1_boss", "w2_l1", "w2_l2", "w2_l3"])
-	await _open("w2_l4")
+	GameState.completed.assign(["w1_boss", "w2_l1", "w2_l2"])
+	await _open("w2_l3")
 	var board: FrascoBoard = scene.board
 	check(board.crossroads != null, "se ve la encrucijada en vez del caldero")
 	check_eq(board.crossroads.rows.size(), 3, "tres caminos")
-	board.place(0, 0)  # 7 -> puente
+	board.place(0, 0)  # nota 8
+	board.place(3, 1)  # asistencia 80
 	var r: Dictionary = await scene.launch()
-	check_eq(r["status"], "wrong", "7 lleva al puente")
+	check_eq(r["path"], "aprobado", "8 y 80 aprueba directo")
 	check_eq(_result().info["creature"], "guardian_puerta", "aparece el Guardián")
-	check_eq(board.crossroads._chosen, 0, "se ilumina el puente")
-	_result()._retry_now()
-	await tree.process_frame
-	board.place(1, 0)  # 4 -> cueva
+	check_eq(board.crossroads._chosen, 0, "se ilumina el primer camino")
+	await _retry()
+	board.place(1, 0)  # nota 5
 	r = await scene.launch()
-	check_eq(r["status"], "success", "4 lleva a la cueva")
-	check(GameState.is_completed("w2_l4"), "nivel completado")
+	check_eq(r["status"], "success", "5 y 80 va al examen final")
 
 
-func test_bola_de_cristal() -> void:
-	GameState.completed.assign(["w1_boss", "w2_l1", "w2_l2", "w2_l3", "w2_l4", "w2_l5"])
-	await _open("w2_mini", "res://scenes/level/crystal_ball.tscn")
-	var r: Dictionary = await scene.choose("débil")
-	check_eq(r["status"], "wrong", "predicción equivocada")
-	_result()._retry_now()
-	await tree.process_frame
-	var rounds: Array = scene.content["rounds"]
-	for i in rounds.size():
-		check_eq(scene.option_buttons.size(), (rounds[i]["options"] as Array).size(), "botones de la ronda %d" % (i + 1))
-		r = await scene.choose(MinigameLogic.prediction_answer(rounds[i]))
-		check_eq(r["status"], "success", "ronda %d" % (i + 1))
-	check(GameState.is_completed("w2_mini"), "minijuego completado")
-	check_eq(GameState.house_state("w2_boss"), "open", "se abre el Guardián")
-
-
-func test_minijuego() -> void:
+func test_minijuego_completa() -> void:
 	GameState.completed.assign(["w1_l1", "w1_l2", "w1_l3", "w1_l4", "w1_l5"])
 	await _open("w1_mini", "res://scenes/level/minigame.tscn")
-	# Primer intento con un error de sintaxis: '5' a la izquierda del =.
-	scene.set_choice(0, "5")
+	check(scene._expected_label.text.contains("Entrada para input(): 21"), "muestra la entrada")
+	scene.set_choice(0, "str")
 	var r: Dictionary = await scene.launch()
-	check_eq(r["status"], "syntax_error", "5 = 5 es SyntaxError")
-	check_eq(_result().info["creature"], "gremlin_sintaxis", "aparece el Gremlin")
-	_result()._retry_now()
-	await tree.process_frame
+	check_eq(r["status"], "wrong", "str(input()) * 2 repite el texto")
+	check(str(r["message"]).contains("2121"), "muestra lo que imprimió")
+	await _retry()
 	var rounds: Array = scene.content["rounds"]
 	for i in rounds.size():
 		var blanks: Array = rounds[i]["blanks"]
 		for b in blanks.size():
 			scene.set_choice(b, blanks[b])
-		check_eq(scene.blanks[0].get_text(), str(blanks[0]), "el hueco muestra la ficha")
 		r = await scene.launch()
 		check_eq(r["status"], "success", "ronda %d" % (i + 1))
 	check(GameState.is_completed("w1_mini"), "minijuego completado")
@@ -220,9 +277,16 @@ func test_minijuego() -> void:
 	check_eq(GameState.house_state("w1_boss"), "open", "se abre el boss")
 
 
-func test_minijuego_errores() -> void:
-	var rounds: Array = ContentDB.get_content("w1_mini")["rounds"]
-	check_eq(MinigameLogic.check(rounds[1], ["Ada"])["status"], "name_error", "Ada sin comillas")
-	check_eq(MinigameLogic.check(rounds[2], ["+"])["status"], "wrong", "4 + 3 no es 12")
-	check_eq(MinigameLogic.check(rounds[2], ["+"])["message"], "Tu hechizo imprimió 7, pero tenía que imprimir 12.", "mensaje")
-	check_eq(MinigameLogic.check(rounds[0], [""])["status"], "incomplete", "hueco vacío")
+func test_bola_de_cristal() -> void:
+	GameState.completed.assign(["w1_boss", "w2_l1", "w2_l2", "w2_l3", "w2_l4", "w2_l5"])
+	await _open("w2_mini", "res://scenes/level/crystal_ball.tscn")
+	var r: Dictionary = await scene.choose("NameError")
+	check_eq(r["status"], "wrong", "y nunca se evalúa")
+	await _retry()
+	var rounds: Array = scene.content["rounds"]
+	for i in rounds.size():
+		check_eq(scene.option_buttons.size(), (rounds[i]["options"] as Array).size(), "botones de la ronda %d" % (i + 1))
+		r = await scene.choose(MinigameLogic.prediction_answer(rounds[i]))
+		check_eq(r["status"], "success", "ronda %d" % (i + 1))
+	check(GameState.is_completed("w2_mini"), "minijuego completado")
+	check_eq(GameState.house_state("w2_boss"), "open", "se abre el Guardián")

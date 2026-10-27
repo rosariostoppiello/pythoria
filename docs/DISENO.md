@@ -48,6 +48,10 @@ Cada nivel muestra una misión ("el caldero necesita un poder de 8").
 - Colores de esencia: número = lavanda, texto = pergamino, verdadero/falso = turquesa. (No usar dorado ni rojo para tipos.)
 - Evaluador propio en GDScript con semántica de Python (int + str es error; `==` devuelve bool; `+` entre str concatena; `*` entre int multiplica). No usar la semántica de GDScript.
 
+### 4a. Dificultad y público
+
+El público es gente de ~18 años en primer año de facultad. Los desafíos parten de una base exigente: precedencia de operadores, `/` contra `//` (float contra int), conversiones con `input()`, cortocircuito de `and`/`or`, orden de los `elif`. En cada mundo, más o menos **la mitad de los desafíos es escribir código** (ver 4c); el resto usa las mecánicas de arrastrar, que sirven para concentrarse en un concepto puntual.
+
 ### 4b. Mecánica de la Encrucijada (if / elif / else, mundo 2)
 
 Usa los mismos frascos y fichas, pero en lugar del caldero hay un camino que se divide en una rama por cada `if`, `elif` y `else` (`branches` en el JSON).
@@ -55,6 +59,15 @@ Usa los mismos frascos y fichas, pero en lugar del caldero hay un camino que se 
 - Se gana si `camino` termina igual a `goal`. Se ilumina en turquesa el camino correcto, o en rojo el equivocado ("El Guardián te mandó a puente, pero tenías que llegar a cueva").
 - Los errores son los mismos que en el Frasco: frasco vacío (Fantasma Sin Nombre) o comparar número con texto (Quimera Tipos).
 - El código Python en vivo muestra el bloque if/elif/else completo con sangría.
+
+### 4c. Escribí el hechizo (código)
+
+El jugador escribe un programa en un editor de código dentro del juego (resaltado de sintaxis, números de línea, sangría automática de 4 espacios). El programa se corre con el evaluador propio contra **varios casos de prueba**, como un corrector automático de facultad: cada caso trae las entradas que devuelve `input()` y la salida exacta esperada (se ignoran los espacios al final de cada línea). Así no se puede "hardcodear" la respuesta.
+- **Probar** corre el caso 1 y muestra la salida o el error, sin juzgar. **Lanzar** corre todos los casos y marca cada uno con ✓ o x.
+- Si falla, se dice qué caso, qué esperaba y qué imprimió; los errores de Python traen la criatura de siempre y una explicación del error típico (por ejemplo "input() siempre devuelve texto").
+- Una consigna puede exigir usar algo (`require`: un f-string, un `elif`); si falta, avisa el búho.
+- Algunos desafíos son "arreglá el hechizo": el código inicial tiene errores que hay que corregir.
+- Valen 80 XP (campo `xp` del nivel) y tienen las mismas 3 pistas de Ada.
 
 ## 5. Valores de juego (propuesta, ajustables en `data/worlds.json`)
 
@@ -120,19 +133,22 @@ Paneles de pergamino con esquinas redondeadas y borde violeta. Barra superior co
 
 Cada mundo: historia corta, 5 niveles, 1 minijuego, 1 boss. Derrotar al boss abre el mundo siguiente.
 
-## 9. Minijuegos del Mundo 1
+## 9. Mundo 1: Valle de los Frascos
 
-- **Completa el hechizo**: un fragmento de código con huecos (`____ = 5`, `print(____)`); el jugador arrastra fichas a los huecos. 3 rondas.
-- **Boss Gremlin Sintaxis**: 3 rondas de mecánica del Frasco con dificultad creciente (más frascos, más operadores, mezcla de tipos). El Gremlin tiene barra de vida que baja con cada ronda acertada. Se vence completando las 3.
+- **Niveles 1 y 2 (Frasco):** precedencia (`a + b * c` con una ficha trampa de texto) y división (`/` da float, `//` y `%`).
+- **Niveles 3 a 5 (código):** leer con `input()` y convertir, armar mensajes con f-strings, `//` y `%` para pasar segundos a horas, promedio con `float()` y `{x:.2f}`.
+- **Minijuego "Completa el hechizo":** fragmentos de código con huecos `____` (conversiones, formato de f-strings, `//` y `%`, métodos de texto); el código completado se ejecuta y se compara lo impreso. 4 rondas.
+- **Boss Gremlin Sintaxis:** 3 rondas (Frasco con trampa `'5' * 4`, arreglar un hechizo roto, y un programa de descuentos), con barra de vida.
 
 Idea a futuro: preguntas y rondas del boss generadas por IA adaptadas al nivel del jugador.
 
 ## 9b. Mundo 2: Bosque de las Encrucijadas
 
-- **Niveles 1 a 3 (Frasco):** comparaciones (`>`, `<`, `!=`, `>=`) y operadores lógicos (`and`, `or`). El caldero pide `True` o `False`.
-- **Niveles 4 y 5 (Encrucijada):** if/elif/else con uno y con dos frascos (`edad >= 12 and tiene_mapa`).
-- **Minijuego "Bola de cristal":** la bola muestra un código con if/elif/else y el jugador elige entre 3 opciones qué va a imprimir. 3 rondas. La respuesta correcta sale de ejecutar el código, no de un campo del JSON.
-- **Boss Guardián de la Puerta:** 3 rondas (comparación con una ficha trampa de texto, `not` con `and`/`or`, y una Encrucijada), con barra de vida como el Gremlin.
+- **Niveles 1 y 2 (Frasco):** comparaciones encadenadas con `%` (`0 <= x < 10 and x % 2 == 0`) y `and`/`or` que devuelven uno de sus valores (verdad de `0` y `''`).
+- **Nivel 3 (Encrucijada):** if/elif/else con dos condiciones (nota y asistencia).
+- **Niveles 4 y 5 (código):** clasificador de notas con `elif` en el orden correcto y año bisiesto.
+- **Minijuego "Bola de cristal":** se muestra un código y se elige qué va a pasar: qué imprime, o qué error da. 4 rondas con trampas (cortocircuito, orden de textos, `input()` comparado con un número, orden de los `elif`).
+- **Boss Guardián de la Puerta:** Encrucijada de 4 caminos, un programa con `and`/`or`, y arreglar un `if` con tres errores.
 
 ## 10. Progresión y guardado
 

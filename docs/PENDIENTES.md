@@ -70,3 +70,16 @@
 - **Mundo 3** pasa a ser el único placeholder con casitas ("Próximamente").
 - **Sprites nuevos**: `guardian_puerta` (armadura roja con escudo-puerta y llave) y `crystal_ball`.
 - **Pendiente propuesto, no hecho**: guiar la mirada en el nivel 1 (que las fichas pulsen al empezar y el botón Lanzar cuando los frascos están llenos), para que la primera pantalla se sienta menos cargada sin sacar nada.
+
+## Más dificultad y escribir código (agregado después)
+
+- **Público objetivo**: primer año de facultad (~18 años). Se reescribió el contenido de los mundos 1 y 2 con una base más exigente (ver `docs/DISENO.md` §4a, §9 y §9b).
+- **Mecánica nueva "Escribí el hechizo"** (`mechanic: "codigo"`, ver DISENO §4c): editor `CodeEdit` nativo de Godot, no Monaco (Monaco sigue fuera del alcance). Funciona igual en la versión web.
+- **Corrector**: cada caso de prueba trae entradas para `input()` y la salida esperada. Se comparan las salidas ignorando espacios al final de las líneas. Un test (`test_mitad_escribir_codigo`) asegura que en cada mundo al menos la mitad de los desafíos (sin contar el minijuego) sea de código, y otro que la solución de cada ejercicio pase y el código inicial no.
+- **`input()` no imprime el mensaje**: `input("Edad: ")` funciona, pero el mensaje no aparece en la salida, para que los casos de prueba comparen solo lo que imprime `print`. Está aclarado en las consignas.
+- **XP**: los niveles de código valen 80 (campo `xp` en el JSON); las pistas siguen costando 10.
+- **Pistas**: ahora se ve solo la última pista pedida (las de código son más largas); tocando el globo se repasan las anteriores.
+- **Evaluador**: se agregó lo necesario para estos ejercicios (`input`, `float`, `round` con redondeo al par como Python, `abs`, `max`, `min`, `**`, `+=`, formatos `{x:.2f}`, `{x:,}`, `{x:>5}`, `{x:.1%}`, métodos de texto y `print(sep=, end=)`). Los float se imprimen igual que en Python (`0.30000000000000004`). Todavía no hay bucles, listas ni funciones propias: llegan con los mundos 3 a 6.
+- **Frascos "any"**: en el nivel del hongo sabio los frascos aceptan cualquier tipo (`"accepts": "any"`).
+- **Bola de cristal**: una opción puede ser el nombre de un error (`TypeError`); la respuesta correcta sigue saliendo de ejecutar el código.
+- **Herramienta**: `tools/format_json.py` deja `data/worlds.json` prolijo después de editarlo.

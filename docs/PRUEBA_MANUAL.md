@@ -1,6 +1,6 @@
 # Prueba manual
 
-Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 68 tests).
+Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 81 tests).
 
 ## 0. Abrir el proyecto
 
@@ -45,68 +45,74 @@ Para empezar de cero en cualquier momento: en el menú, **Jugar** → **Sí, emp
 | **Esc** | Pausa con **Continuar**, **Mapa de mundos** y **Menú**. **Esc** otra vez continúa. |
 | **‹ Mundos** (arriba a la izquierda) | Vuelve al mapa de mundos. |
 
-## 4. Niveles del Frasco (Mundo 1)
+## 4. Mundo 1: Valle de los Frascos
 
-Pantalla: a la izquierda la misión ("El caldero pide: 8") y Ada con el búho y la vela; a la derecha los frascos, el operador, el caldero, las fichas y el código Python en vivo.
+La dificultad apunta a primer año de facultad. Cada mundo mezcla desafíos de **arrastrar** (Frasco, Encrucijada) con desafíos de **escribir código** (más o menos la mitad).
 
-**Nivel 1 – Tu primer frasco** (pide 8)
+### Frasco (arrastrar fichas)
 
-1. Arrastrá la ficha **5** al frasco **poder**. La ficha desaparece de la bandeja, el frasco muestra `5` y el código muestra `poder = 5` y `# bonus está vacío`.
-2. Apretá **Lanzar** con un solo frasco lleno → aparece el **Fantasma Sin Nombre** con `NameError: name 'bonus' is not defined`. **Reintentar** cierra el cartel y el tablero queda igual.
-3. Poné **9** en **bonus** y **Lanzar** → el caldero se pone rojo: "Obtuviste 14, pero el caldero pedía 8."
-4. Tocá el frasco **bonus** (lo vacía; el 9 vuelve a la bandeja). Tocá la ficha **3** (va al primer frasco vacío).
-5. **Lanzar** → caldero turquesa, estrella, "¡Hechizo logrado!" y **+50 XP**. La barra de XP de arriba sube y la racha pasa a "1 día".
-6. **Continuar** → volvés al mapa frente a la casita 1, que ahora tiene estrella dorada; la casita 2 se abre.
-7. Entrá de nuevo a la casita 1 y resolvela: el resultado dice que no suma XP de nuevo.
+**Nivel 1 – El orden de los hechizos** (pide 14 con `a + b * c`)
 
-**Nivel 2 – Esencias de texto** (pide `'Hola Ada'`)
+1. Arrastrá **2** a `a`, **3** a `b` y la ficha de texto **'4'** a `c`. El código de abajo muestra `c = '4'`.
+2. **Lanzar** → **Quimera Tipos**: `3 * '4'` da `'444'` y después `2 + '444'` es `TypeError`. **Reintentar** deja el tablero como estaba.
+3. Con solo `a` lleno → **Fantasma Sin Nombre** (`NameError`).
+4. Con `2`, `3`, `4` → éxito y +50 XP. También sirven otras combinaciones (`4 + 5 * 2`): se evalúa el resultado, no una respuesta fija.
 
-- Poné `'Hola '` en **saludo** y `7` en **nombre** → **Lanzar** → aparece la **Quimera Tipos** con `TypeError: no se puede sumar str y int`.
-- Con `'Hola '` + `'Ada'` → éxito.
+**Nivel 2 – Repartir caramelos** (pide el int 3)
 
-**Pistas de Ada** (probalo en el nivel 3)
+- `6 / 2` → "Obtuviste 3.0 (float), pero el caldero pedía 3 (int): mismo valor, distinto tipo."
+- `17 % 5` → "Obtuviste 2…". `17 // 5` o `6 // 2` → éxito.
 
-- **Pedir pista (-10 XP)**: aparece la pista 1, se enciende la vela y la recompensa baja a 40 XP.
-- Pedí las 3: la última es la solución parcial y el botón dice "No hay más pistas". Recompensa: 20 XP.
-- Si salís y volvés al nivel, las pistas ya pedidas siguen visibles sin cobrar de nuevo.
+**Pistas de Ada**: en cualquier nivel, **Pedir pista (-10 XP)** enciende la vela y baja la recompensa. Se ve la última pista; tocando el globo se repasan las anteriores. Volviendo al nivel, las pistas pagadas siguen ahí gratis.
 
-**Nivel 3 – El poder de multiplicar** (pide 12): elegí el operador con los botones `+ - *`. Sirven tanto `3 * 4` como `8 + 4`. Sin operador elegido, **Lanzar** muestra al Gremlin Sintaxis.
+### Escribí el hechizo (código)
 
-**Nivel 4 – Verdadero o falso** (pide `True`): `7 == 7` da éxito; `7 + 7` dice "Obtuviste 14, pero el caldero pedía True."
+Pantalla: a la izquierda la consigna ("Tu tarea"); a la derecha un editor de código (Fira Code, números de línea, colores, sangría automática con 4 espacios), la lista de **casos de prueba** y la **Salida**.
 
-**Nivel 5 – Bienvenido, aprendiz** (f-string): poné `'Ada'` en **nombre**. El caldero muestra `f"Bienvenido, {nombre}"`.
+- **Probar (caso 1)**: corre tu programa con la entrada del caso 1 y muestra lo que imprime (o el error). No juzga.
+- **Lanzar**: corre todos los casos. Cada caso queda con `✓` o `x`. Si falla uno, dice cuál, qué esperaba y qué imprimiste.
+- **Restaurar código**: vuelve al código inicial.
 
-**Pausa en un nivel**: **Esc** → **Continuar**, **Reintentar** (recarga el nivel), **Volver al mapa**, **Menú**.
+**Nivel 3 – Tu primer programa** (80 XP): leé nombre y edad, imprimí `Ada cumple 21 el año que viene`.
 
-## 5. Minijuego "Completa el hechizo"
+1. Escribí `print(f"{nombre} cumple {edad + 1} el año que viene")` sin convertir la edad → **Quimera Tipos** con la explicación "input() siempre devuelve texto".
+2. Usá `print(nombre, "cumple", ...)` sin f-string → el búho avisa que la consigna pide un f-string.
+3. Escribí la respuesta fija `print(f"Ada cumple 21 el año que viene")` → pasa el caso 1 pero falla el 2 (Linus): no se puede hardcodear.
+4. Con `edad = int(input())` y el f-string → éxito.
 
-Se abre después del nivel 5. Hay 3 rondas; cada una muestra código con huecos `____`.
+**Nivel 4 – El reloj de arena**: segundos → `1h 2m 5s` con `//` y `%`. Si lanzás el código inicial sin completar, aparece el Fantasma (`horas` no existe).
 
-1. Ronda 1 (`____ = 5` / `print(poder)`): poné `5` en el hueco y **Lanzar** → Gremlin Sintaxis (`5 = 5` no es válido). Con `poder` → "Ronda 2 de 3".
-2. Ronda 2: `Ada` sin comillas → Fantasma Sin Nombre. Con `'Ada'` → sigue.
-3. Ronda 3: `+` → "imprimió 7, pero tenía que imprimir 12". Con `*` → "¡Hechizo completo!" y +100 XP.
-4. Al volver al mapa, la casita **Boss** se abre.
+**Nivel 5 – El promedio de Ada**: tres notas con decimales → `Promedio: 8.33`. Con `int(input())` el caso `5.5` da `ValueError` (Quimera); sin paréntesis el promedio da mal.
 
-## 6. Boss: Gremlin Sintaxis
+### Minijuego "Completa el hechizo" (4 rondas)
 
-- A la izquierda, el Gremlin balanceándose con su barra de vida roja y "Ronda 1 de 3".
-- Ronda 1 (pide 10): probá `6 + '6'` → Quimera Tipos. Con `6 + 4` → el Gremlin se sacude y pierde un tercio de vida.
-- Ronda 2 (`'Hola Byte'`) y ronda 3 (`3 == 3` → `True`).
-- Al ganar: "¡Venciste al Gremlin Sintaxis!" y +200 XP. **Continuar** lleva al **mapa de mundos**: el aprendiz camina por la línea punteada hasta el mundo 2, que aparece con un "pop" y queda desbloqueado. El nodo 1 queda dorado con estrella.
+Arrastrá (o tocá) fichas de código a los huecos `____` y **Lanzar**:
+
+1. `edad = ____(input())` con entrada `21`: `str` imprime `2121`, `float` imprime `42.0`; `int` → `42`.
+2. `f"Total: ${precio ____ cantidad:____}"` → `*` y `,.2f` dan `Total: $3,751.50`. Con `d` aparece la Quimera (`d` es solo para int).
+3. `minutos ____ 60` dos veces → `//` y `%` en ese orden dan `2h15m`.
+4. `nombre.____().____()` → `strip` y `title` dan `Ada Lovelace`.
+
+### Boss: Gremlin Sintaxis (3 rondas)
+
+- Ronda 1 (Frasco): `(a + b) * c` = 20. La ficha `'5'` da `'5555'` (texto repetido), no un error: "Obtuviste '5555', pero el caldero pedía 20".
+- Ronda 2 (código): arreglá el hechizo roto `"..." + edad + 10`. Lanzarlo sin tocar despierta a la Quimera.
+- Ronda 3 (código): precio con descuento, `Pagás 53.91`.
+- Cada ronda acertada baja un tercio de la vida; un fallo no. Al ganar: +200 XP y el aprendiz camina al mundo 2.
 
 ## 7. Mundo 2: Bosque de las Encrucijadas
 
-Se abre al vencer al Gremlin. Para llegar rápido sin jugar el mundo 1, agregá `"w1_boss"` a `completed` en `save.json` (ver la sección 8).
+Para llegar rápido sin jugar el mundo 1, agregá `"w1_boss"` a `completed` en `save.json` (ver la sección 8).
 
 | Casita | Probá | Debería pasar |
 |---|---|---|
-| 1 – ¿Más o menos? | `8 > 5` | Éxito (`True`). `3 > 5` da "Obtuviste False, pero el caldero pedía True." |
-| 2 – Un hechizo de duda | `4 != 4` o `4 >= 7` | Éxito (`False`). |
-| 3 – Llave y mapa | `True and False`, después `True or False` | `and` da False (falla); `or` da True (éxito). Los frascos se ven turquesa (esencia bool) y el operador aparece entre los frascos. |
-| 4 – La encrucijada | `poder = 7`, después `poder = 4` | A la derecha, el aprendiz frente a tres caminos (puente, cueva, río) con su `if`/`elif`/`else`. 7 ilumina el puente en rojo y aparece el **Guardián**: "te mandó a puente, pero tenías que llegar a cueva". 4 ilumina la cueva en turquesa: éxito. Abajo se ve el bloque if/elif/else con sangría. |
-| 5 – Dos condiciones | `edad = 15`, `tiene_mapa = False` | Llega a la aldea. Con `True` va al bosque profundo (incorrecto). |
-| Minijuego – Bola de cristal | Elegí una opción | Muestra un código; si elegís mal, la bola explica qué imprime de verdad. Con las tres rondas acertadas: +100 XP. |
-| Boss – Guardián de la Puerta | Ronda 1: `'10' >= 3` y después `10 >= 3`. Ronda 2: `abierto = False`, `llave = True`. Ronda 3: `nivel = 6` | La ficha `'10'` (texto) despierta a la Quimera Tipos. Cada acierto baja la vida. Al ganar: "La puerta se abre de par en par…", +200 XP y el aprendiz camina al mundo 3. |
+| 1 – El rango del portón (Frasco) | `x = 7`, `10`, `'4'` y `4` con `0 <= x < 10 and x % 2 == 0` | 7 es impar y 10 queda afuera (False). `'4'` (texto) despierta a la Quimera al compararlo con 0. `4` → éxito. |
+| 2 – El hongo sabio (Frasco) | `5 or 'Ada'`, después `'' or 'Ada'` | `and`/`or` devuelven uno de sus valores: `5 or 'Ada'` da `5`. `'' or 'Ada'` (o `5 and 'Ada'`) da `'Ada'`: éxito. |
+| 3 – La mesa de examen (Encrucijada) | `nota = 8`, `asistencia = 80`; después `nota = 5` | 8 va a "aprobado" (rojo, aparece el Guardián). 5 con 80 va a "examen final" (turquesa). Con asistencia 60, "recursa". |
+| 4 – Clasificador de notas (código) | Escribí los `elif` en orden equivocado (`>= 6` antes que `>= 8`) | Falla el caso 1 (nota 9 imprime Aprobado). Sin `elif`, el búho avisa que la consigna lo pide. En orden correcto → éxito. |
+| 5 – Año bisiesto (código) | `anio % 4 == 0` solo | Falla con 1900. La condición completa `(anio % 4 == 0 and anio % 100 != 0) or anio % 400 == 0` pasa los 5 casos. |
+| Minijuego – Bola de cristal (4 rondas) | Predecí qué pasa | Las opciones pueden ser un error (`NameError`, `TypeError`). Trampas: cortocircuito de `or`, `'Ana' < 'ana'`, comparar `input()` con un número, y el orden de los `elif` en FizzBuzz. |
+| Boss – Guardián de la Puerta | Ronda 1: Encrucijada de 4 caminos (`temp = 15`, `lluvia = True` → refugio). Ronda 2: escribí la regla de entrada al bosque. Ronda 3: arreglá un `if` con tres errores (sangría, `=` en vez de `==` y falta un `:`) | Cada acierto baja la vida; al ganar, +200 XP y el camino al mundo 3. |
 
 ## 7b. Mundo 3 (placeholder)
 
