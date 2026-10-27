@@ -111,7 +111,7 @@ func _build_ui(world: Dictionary) -> void:
 	add_child(layer)
 	var bar := TopBar.new("Mundo %d · %s" % [world_id, world.get("name", "")])
 	layer.add_child(bar)
-	var back := bar.add_left_button("◂ Mundos")
+	var back := bar.add_left_button("‹ Mundos")
 	back.pressed.connect(SceneManager.goto_world_map)
 
 	var foot := CenterContainer.new()

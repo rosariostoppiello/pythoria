@@ -40,7 +40,7 @@ func _ready() -> void:
 
 	var bar := TopBar.new("Mapa de Pythoria")
 	add_child(bar)
-	bar.add_left_button("◂ Menú").pressed.connect(SceneManager.goto_menu)
+	bar.add_left_button("‹ Menú").pressed.connect(SceneManager.goto_menu)
 	_build_info()
 
 	var start := clampi(GameState.current_world, 1, GameState.frontier_world())

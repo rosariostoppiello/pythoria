@@ -197,7 +197,7 @@ func _update_hints() -> void:
 	_candle.texture = UI.tex("candle_books_lit" if shown > 0 else "candle_books")
 	var cost := int(ContentDB.xp_config()["hint_cost"])
 	_hint_button.disabled = shown >= hints.size()
-	_hint_button.text = "Pedir pista (−%d XP)" % cost if shown < hints.size() else "No hay más pistas"
+	_hint_button.text = "Pedir pista (-%d XP)" % cost if shown < hints.size() else "No hay más pistas"
 	if GameState.is_completed(house_id):
 		_reward_label.text = "Ya completaste este nivel"
 	else:

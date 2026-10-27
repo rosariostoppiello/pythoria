@@ -48,7 +48,7 @@ func _build() -> void:
 			_op_label.custom_minimum_size = Vector2(48, 0)
 			_op_label.add_theme_font_size_override("font_size", 40)
 			row.add_child(_op_label)
-	var arrow := UI.label("→", "HeaderLabel")
+	var arrow := UI.label("→", "CodeLabel")
 	arrow.add_theme_font_size_override("font_size", 40)
 	row.add_child(arrow)
 	row.add_child(_cauldron_view())
