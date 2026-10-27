@@ -112,6 +112,10 @@ base_font = ExtResource("2_m7jai")
 variation_opentype = {
 2003265652: 500
 }
+opentype_features = {
+1667329140: 0,
+1818847073: 0
+}
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_w0yef"]
 content_margin_left = 10.0

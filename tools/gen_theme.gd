@@ -40,6 +40,9 @@ static func build_theme() -> Theme:
 	var body := font(TC.FONT_BODY, 600)
 	var title := font(TC.FONT_TITLE, 600)
 	var code := font(TC.FONT_CODE, 500)
+	# Sin ligaduras: quien aprende tiene que ver >= y != tal como se escriben, no ≥ y ≠.
+	var ts := TextServerManager.get_primary_interface()
+	code.opentype_features = {ts.name_to_tag("calt"): 0, ts.name_to_tag("liga"): 0}
 	t.default_font = body
 	t.default_font_size = 20
 

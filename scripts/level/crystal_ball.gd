@@ -68,7 +68,7 @@ func _ready() -> void:
 	_code_label = UI.label("", "CodeLabel")
 	_code_label.add_theme_font_size_override("font_size", 22)
 	cbox.add_child(_code_label)
-	right.add_child(UI.label("¿Qué va a imprimir?", "HeaderLabel"))
+	right.add_child(UI.label("¿Qué va a pasar?", "HeaderLabel"))
 	_options_box = UI.vbox(10)
 	right.add_child(_options_box)
 	_load_round()
@@ -89,8 +89,7 @@ func _load_round() -> void:
 	option_buttons.clear()
 	for opt: Variant in r["options"]:
 		var text := str(opt)
-		var b := UI.button(text, "OutlineButton")
-		b.add_theme_font_override("font", load(ThemeColors.FONT_CODE))
+		var b := UI.button(text, "OperatorButton")
 		b.add_theme_font_size_override("font_size", 20)
 		b.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		b.focus_mode = Control.FOCUS_NONE
