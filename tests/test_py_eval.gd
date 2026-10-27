@@ -159,3 +159,77 @@ func test_errores_de_if() -> void:
 	check_eq(PyEval.run(["else:", "    print('x')"])["error"], "SyntaxError", "else suelto")
 	check_eq(PyEval.run(["if x > 1:", "    print('x')"])["error"], "NameError", "variable sin definir en la condición")
 	check_eq(PyEval.run(["if 'a' > 1:", "    print('x')"])["error"], "TypeError", "comparar tipos distintos")
+
+
+func test_input_y_conversiones() -> void:
+	var r := PyEval.run(["nombre = input()", "edad = int(input('Edad: '))", "print(f'{nombre} cumple {edad + 1}')"], {}, ["Ada", "20"])
+	check_eq(r["output"], "Ada cumple 21", "input con int()")
+	r = PyEval.run(["edad = input()", "print(edad + 1)"], {}, ["20"])
+	check_eq(r["error"], "TypeError", "input devuelve texto")
+	r = PyEval.run(["x = input()", "y = input()"], {}, ["1"])
+	check_eq(r["error"], "EOFError", "faltan entradas")
+	_ok("float('2.5') * 2", 5.0)
+	_err("int('3.5')", "ValueError")
+	_err("float('hola')", "ValueError")
+	_ok("int(3.9)", 3)
+	_ok("int(' 42 ')", 42)
+	_ok("bool('')", false)
+	_ok("str(3) + str(4)", "34")
+
+
+func test_floats_como_python() -> void:
+	check_eq(PyEval.run(["print(25 / 3)"])["output"], "8.333333333333334", "repr de float")
+	check_eq(PyEval.run(["print(0.1 + 0.2)"])["output"], "0.30000000000000004", "0.1 + 0.2")
+	check_eq(PyEval.run(["print(6 / 2)"])["output"], "3.0", "/ siempre da float")
+	_ok("round(2.5)", 2)
+	_ok("round(3.5)", 4)
+	_ok("round(-2.5)", -2)
+	_ok("round(2.675, 2)", 2.67)
+	_ok("round(7.0 / 3, 1)", 2.3)
+	_ok("abs(-7)", 7)
+	_ok("max(3, 9, 4)", 9)
+	_ok("min('pera', 'banana')", "banana")
+	_ok("2 ** 10", 1024)
+	_ok("-2 ** 2", -4)
+	_ok("2 ** -1", 0.5)
+	_ok("2 ** 3 ** 2", 512)
+
+
+func test_asignacion_aumentada() -> void:
+	var r := PyEval.run(["x = 10", "x += 5", "x //= 4", "x *= 3", "print(x)"])
+	check_eq(r["output"], "9", "+= //= *=")
+	r = PyEval.run(["s = 'ja'", "s += 'ja'", "print(s)"])
+	check_eq(r["output"], "jaja", "+= con texto")
+	check_eq(PyEval.run(["nadie += 1"])["error"], "NameError", "+= sin definir")
+
+
+func test_formato_f_string() -> void:
+	_ok("f'{8.3333:.2f}'", "8.33")
+	_ok("f'{10:.2f}'", "10.00")
+	_ok("f'{0.256:.1%}'", "25.6%")
+	_ok("f'{1234567:,}'", "1,234,567")
+	_ok("f'{1234.5:,.2f}'", "1,234.50")
+	_ok("f'[{7:>3}]'", "[  7]")
+	_ok("f'[{\"ab\":<4}]'", "[ab  ]")
+	_ok("f'{x:.1f} y {y}'", "2.5 y 3", {"x": 2.5, "y": 3})
+	_err("f'{\"hola\":.2f}'", "ValueError")
+
+
+func test_metodos_de_texto() -> void:
+	_ok("'Hola'.upper()", "HOLA")
+	_ok("'  ada  '.strip().title()", "Ada")
+	_ok("nombre.lower().replace('a', 'o')", "odo", {"nombre": "Ada"})
+	_ok("'banana'.count('a')", 3)
+	_ok("'python'.startswith('py')", true)
+	_ok("'2024'.isdigit()", true)
+	_ok("'-3'.isdigit()", false)
+	_ok("'grace hopper'.capitalize()", "Grace hopper")
+	_err("(5).upper()", "AttributeError")
+	_err("'a'.volar()", "AttributeError")
+
+
+func test_print_sep_end() -> void:
+	check_eq(PyEval.run(["print('a', 'b', sep='-')"])["output"], "a-b", "sep")
+	check_eq(PyEval.run(["print('a', end='')", "print('b')"])["output"], "ab", "end")
+	check_eq(PyEval.run(["print(1, 2, 3, sep='')"])["output"], "123", "sep vacío")
+	check_eq(PyEval.run(["print('x', color='rojo')"])["error"], "TypeError", "argumento desconocido")

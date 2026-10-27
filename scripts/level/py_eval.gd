@@ -3,20 +3,30 @@ extends RefCounted
 ## Evaluador de un subconjunto de Python con semántica de Python (no de GDScript).
 ##
 ## Soporta: enteros, decimales, textos ('...' y "..."), True/False/None, f-strings
-## con {expresión}, + - * / // %, comparaciones (== != < > <= >=, encadenadas),
-## and/or/not, paréntesis, menos unario, nombres, asignación simple (x = expr),
-## bloques if/elif/else con sangría y llamadas a print/str/int/len.
+## con {expresión} y formato ({x:.2f}, {x:,}, {x:>5}), + - * / // % **,
+## comparaciones (== != < > <= >=, encadenadas), and/or/not, paréntesis, menos
+## unario, nombres, asignación (x = expr, x += expr, ...), bloques if/elif/else con
+## sangría, métodos de texto (upper, lower, strip, replace, ...) y las funciones
+## print (con sep/end), input, str, int, float, bool, len, round, abs, max y min.
+## input() lee de una lista de entradas fija (no imprime el mensaje).
 ## Errores como en Python: TypeError, NameError, SyntaxError, IndentationError,
-## ZeroDivisionError.
+## ValueError, ZeroDivisionError, AttributeError, EOFError.
 ##
 ## Resultado de evaluate/run: {ok, value, output, error, message, env}.
 
-const OPS := ["==", "!=", "<=", ">=", "//", "<", ">", "+", "-", "*", "/", "%", "(", ")", "=", ","]
+const OPS := ["//=", "**", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=", "//",
+	"<", ">", "+", "-", "*", "/", "%", "(", ")", "=", ",", "."]
 const COMPARE_OPS := ["==", "!=", "<", ">", "<=", ">="]
-const BUILTINS := ["print", "str", "int", "len"]
+const AUG_OPS := {"+=": "+", "-=": "-", "*=": "*", "/=": "/", "//=": "//", "%=": "%"}
+const BUILTINS := ["print", "input", "str", "int", "float", "bool", "len", "round", "abs", "max", "min"]
+const STR_METHODS := ["upper", "lower", "strip", "title", "capitalize", "replace", "count",
+	"startswith", "endswith", "isdigit", "isalpha", "find"]
 
 var env: Dictionary = {}
-var output: PackedStringArray = []
+## Lo impreso hasta ahora (print agrega su `end`, por defecto un salto de línea).
+var output: String = ""
+## Entradas que devuelve input(), en orden.
+var inputs: Array = []
 var _err: Dictionary = {}
 var _toks: Array = []
 var _pos := 0
@@ -38,9 +48,10 @@ static func evaluate(src: String, variables: Dictionary = {}) -> Dictionary:
 
 ## Ejecuta varias líneas (asignaciones, print, expresiones, if/elif/else).
 ## output = lo impreso; env = variables al terminar.
-static func run(lines: Array, variables: Dictionary = {}) -> Dictionary:
+static func run(lines: Array, variables: Dictionary = {}, input_values: Array = []) -> Dictionary:
 	var e := PyEval.new()
 	e.env = variables.duplicate()
+	e.inputs = input_values.duplicate()
 	var prog: Array[Dictionary] = []
 	for line: String in lines:
 		var clean := line.replace("\t", "    ")
@@ -95,9 +106,12 @@ static func to_str(v: Variant) -> String:
 			var f: float = v
 			if is_inf(f):
 				return "inf" if f > 0 else "-inf"
+			if is_nan(f):
+				return "nan"
 			if f == floorf(f) and absf(f) < 1e16:
 				return "%d.0" % int(f)
-			return str(f)
+			# var_to_str da la representación más corta que vuelve al mismo float, como Python.
+			return var_to_str(f)
 	return str(v)
 
 
@@ -138,9 +152,10 @@ func _fail(kind: String, msg: String) -> void:
 
 
 func _result(value: Variant) -> Dictionary:
+	var text := output.trim_suffix("\n")
 	if not _err.is_empty():
-		return {"ok": false, "value": null, "output": "\n".join(output), "error": _err["error"], "message": _err["message"], "env": env}
-	return {"ok": true, "value": value, "output": "\n".join(output), "error": "", "message": "", "env": env}
+		return {"ok": false, "value": null, "output": text, "error": _err["error"], "message": _err["message"], "env": env}
+	return {"ok": true, "value": value, "output": text, "error": "", "message": "", "env": env}
 
 
 # --- Tokenizador -------------------------------------------------------------
@@ -249,14 +264,17 @@ func _parse_line(src: String) -> Variant:
 	var ast: Variant = _parse_expr()
 	if not _err.is_empty():
 		return null
-	if _is_op("="):
-		_next()
+	if _is_op("=") or (_peek()["t"] == "OP" and AUG_OPS.has(_peek()["v"])):
+		var op: String = _next()["v"]
 		if typeof(ast) != TYPE_DICTIONARY or ast.get("k") != "name":
 			_fail("SyntaxError", "no se puede asignar a un valor; a la izquierda del = va un nombre")
 			return null
 		var value: Variant = _parse_expr()
 		if not _err.is_empty():
 			return null
+		if op != "=":
+			# x += 1 es x = x + 1
+			value = {"k": "bin", "op": AUG_OPS[op], "l": ast, "r": value}
 		ast = {"k": "assign", "name": ast["v"], "value": value}
 	if _peek()["t"] != "EOF":
 		_fail("SyntaxError", "sintaxis inválida cerca de '%s'" % _peek()["v"])
@@ -324,7 +342,64 @@ func _parse_unary() -> Variant:
 	if _is_op("-") or _is_op("+"):
 		var op: String = _next()["v"]
 		return {"k": "neg" if op == "-" else "pos", "v": _parse_unary()}
-	return _parse_primary()
+	return _parse_power()
+
+
+## ** asocia a la derecha y pesa más que el menos unario de la izquierda: -2 ** 2 es -4.
+func _parse_power() -> Variant:
+	var base: Variant = _parse_postfix()
+	if _err.is_empty() and _is_op("**"):
+		_next()
+		return {"k": "bin", "op": "**", "l": base, "r": _parse_unary()}
+	return base
+
+
+## Llamadas a métodos: texto.upper(), nombre.replace('a', 'o').
+func _parse_postfix() -> Variant:
+	var node: Variant = _parse_primary()
+	while _err.is_empty() and _is_op("."):
+		_next()
+		if _peek()["t"] != "NAME":
+			_fail("SyntaxError", "después del punto va el nombre de un método")
+			return null
+		var method: String = _next()["v"]
+		if not _is_op("("):
+			_fail("AttributeError", "'%s' necesita paréntesis: %s()" % [method, method])
+			return null
+		_next()
+		var call := _parse_args()
+		if not _err.is_empty():
+			return null
+		node = {"k": "method", "obj": node, "name": method, "args": call["args"]}
+	return node
+
+
+## Argumentos hasta el ')' (ya consumido el '('). Soporta nombre=valor.
+func _parse_args() -> Dictionary:
+	var args: Array = []
+	var kwargs: Dictionary = {}
+	if not _is_op(")"):
+		while _err.is_empty():
+			var t := _peek()
+			var nxt: Dictionary = _toks[mini(_pos + 1, _toks.size() - 1)]
+			if t["t"] == "NAME" and nxt["t"] == "OP" and nxt["v"] == "=":
+				_next()
+				_next()
+				kwargs[t["v"]] = _parse_expr()
+			else:
+				if not kwargs.is_empty():
+					_fail("SyntaxError", "los argumentos con nombre van al final")
+					return {}
+				args.append(_parse_expr())
+			if _is_op(","):
+				_next()
+				continue
+			break
+	if not _is_op(")"):
+		_fail("SyntaxError", "falta cerrar el paréntesis")
+		return {}
+	_next()
+	return {"args": args, "kwargs": kwargs}
 
 
 func _parse_primary() -> Variant:
@@ -349,17 +424,10 @@ func _parse_primary() -> Variant:
 					return {"k": "lit", "v": null}
 			if _is_op("("):
 				_next()
-				var args: Array = []
-				if not _is_op(")"):
-					args.append(_parse_expr())
-					while _err.is_empty() and _is_op(","):
-						_next()
-						args.append(_parse_expr())
-				if not _is_op(")"):
-					_fail("SyntaxError", "falta cerrar el paréntesis")
+				var call := _parse_args()
+				if not _err.is_empty():
 					return null
-				_next()
-				return {"k": "call", "name": t["v"], "args": args}
+				return {"k": "call", "name": t["v"], "args": call["args"], "kwargs": call["kwargs"]}
 			return {"k": "name", "v": t["v"]}
 		"OP":
 			if t["v"] == "(":
@@ -396,12 +464,18 @@ func _parse_fstring(body: String) -> Variant:
 			if lit != "":
 				parts.append({"k": "lit", "v": lit})
 				lit = ""
+			var inner := body.substr(i + 1, close - i - 1)
+			var spec := ""
+			var colon := _spec_colon(inner)
+			if colon >= 0:
+				spec = inner.substr(colon + 1)
+				inner = inner.substr(0, colon)
 			var sub := PyEval.new()
-			var ast: Variant = sub._parse_line(body.substr(i + 1, close - i - 1))
+			var ast: Variant = sub._parse_line(inner)
 			if not sub._err.is_empty():
 				_err = sub._err
 				return null
-			parts.append({"k": "fmt", "v": ast})
+			parts.append({"k": "fmt", "v": ast, "spec": spec})
 			i = close + 1
 			continue
 		lit += c
@@ -409,6 +483,84 @@ func _parse_fstring(body: String) -> Variant:
 	if lit != "":
 		parts.append({"k": "lit", "v": lit})
 	return {"k": "fstr", "parts": parts}
+
+
+## Posición del ':' que separa la expresión del formato (fuera de comillas y paréntesis).
+static func _spec_colon(inner: String) -> int:
+	var depth := 0
+	var quote := ""
+	for i in inner.length():
+		var c := inner[i]
+		if quote != "":
+			if c == quote:
+				quote = ""
+		elif c == "'" or c == '"':
+			quote = c
+		elif c == "(":
+			depth += 1
+		elif c == ")":
+			depth -= 1
+		elif c == ":" and depth == 0:
+			return i
+	return -1
+
+
+## format(valor, spec) para lo más común: [<>^][ancho][,][.N][f d %].
+func format_spec(v: Variant, spec: String) -> String:
+	if spec == "":
+		return to_str(v)
+	var re := RegEx.create_from_string("^([<>^]?)(\\d*)(,?)(?:\\.(\\d+))?([fd%]?)$")
+	var m := re.search(spec)
+	if m == null:
+		_fail("ValueError", "formato no soportado: '%s'" % spec)
+		return ""
+	var align := m.get_string(1)
+	var width := m.get_string(2).to_int() if m.get_string(2) != "" else 0
+	var commas := m.get_string(3) == ","
+	var prec := m.get_string(4)
+	var kind := m.get_string(5)
+	var text := ""
+	if kind != "" or prec != "" or commas:
+		if not _is_num(v):
+			_fail("ValueError", "el formato '%s' es para números, no para %s" % [spec, type_name(v)])
+			return ""
+		var x: Variant = _num(v)
+		match kind:
+			"d":
+				if typeof(x) != TYPE_INT:
+					_fail("ValueError", "el formato 'd' es para int, no para float")
+					return ""
+				text = str(x)
+			"%":
+				text = ("%." + (prec if prec != "" else "6") + "f") % (float(x) * 100.0) + "%"
+			_:
+				if prec != "" or kind == "f":
+					text = ("%." + (prec if prec != "" else "6") + "f") % float(x)
+				else:
+					text = to_str(x)
+		if commas:
+			var neg := text.begins_with("-")
+			var digits := text.trim_prefix("-")
+			var dot := digits.find(".")
+			var int_part := digits if dot < 0 else digits.substr(0, dot)
+			var rest := "" if dot < 0 else digits.substr(dot)
+			var grouped := ""
+			for j in int_part.length():
+				if j > 0 and (int_part.length() - j) % 3 == 0:
+					grouped += ","
+				grouped += int_part[j]
+			text = ("-" if neg else "") + grouped + rest
+	else:
+		text = to_str(v)
+	if text.length() < width:
+		var pad := width - text.length()
+		if align == "^":
+			text = " ".repeat(pad / 2) + text + " ".repeat(pad - pad / 2)
+		elif align == "<" or (align == "" and type_name(v) == "str"):
+			text = text + " ".repeat(pad)
+		else:
+			text = " ".repeat(pad) + text
+	return text
 
 
 # --- Evaluación ----------------------------------------------------------------
@@ -523,10 +675,14 @@ func _eval(node: Variant) -> Variant:
 					var pv: Variant = _eval(p["v"])
 					if not _err.is_empty():
 						return null
-					s += to_str(pv)
+					s += format_spec(pv, str(p.get("spec", "")))
+					if not _err.is_empty():
+						return null
 			return s
 		"call":
 			return _call(node)
+		"method":
+			return _method(node)
 		"not":
 			var nv: Variant = _eval(node["v"])
 			return null if not _err.is_empty() else not truthy(nv)
@@ -573,18 +729,41 @@ func _call(node: Dictionary) -> Variant:
 		args.append(_eval(a))
 		if not _err.is_empty():
 			return null
+	var kwargs := {}
+	var raw_kwargs: Dictionary = node.get("kwargs", {})
+	for k: String in raw_kwargs:
+		kwargs[k] = _eval(raw_kwargs[k])
+		if not _err.is_empty():
+			return null
+	if name != "print" and not kwargs.is_empty():
+		_fail("TypeError", "%s() no acepta argumentos con nombre" % name)
+		return null
 	match name:
 		"print":
+			for k: String in kwargs:
+				if k != "sep" and k != "end":
+					_fail("TypeError", "print() no tiene el argumento '%s'" % k)
+					return null
 			var texts: PackedStringArray = []
 			for a: Variant in args:
 				texts.append(to_str(a))
-			output.append(" ".join(texts))
+			output += to_str(kwargs.get("sep", " ")).join(texts) + to_str(kwargs.get("end", "\n"))
 			return null
+		"input":
+			if args.size() > 1:
+				_fail("TypeError", "input() recibe a lo sumo un mensaje")
+				return null
+			if inputs.is_empty():
+				_fail("EOFError", "no hay más entradas para input()")
+				return null
+			return str(inputs.pop_front())
 		"str":
 			return to_str(args[0]) if args.size() > 0 else ""
+		"bool":
+			return truthy(args[0]) if args.size() > 0 else false
 		"len":
 			if args.size() != 1 or type_name(args[0]) != "str":
-				_fail("TypeError", "len() necesita un texto")
+				_fail("TypeError", "len() necesita un texto" if args.size() == 1 else "len() recibe un argumento")
 				return null
 			return (args[0] as String).length()
 		"int":
@@ -597,10 +776,117 @@ func _call(node: Dictionary) -> Variant:
 				return (x as String).strip_edges().to_int()
 			_fail("ValueError", "invalid literal for int(): %s" % repr(x))
 			return null
+		"float":
+			if args.size() != 1:
+				return 0.0
+			var y: Variant = args[0]
+			if _is_num(y):
+				return float(_num(y))
+			if type_name(y) == "str" and (y as String).strip_edges().is_valid_float():
+				return (y as String).strip_edges().to_float()
+			_fail("ValueError", "could not convert string to float: %s" % repr(y))
+			return null
+		"abs":
+			if args.size() != 1 or not _is_num(args[0]):
+				_fail("TypeError", "abs() necesita un número")
+				return null
+			return absi(_num(args[0])) if typeof(_num(args[0])) == TYPE_INT else absf(args[0])
+		"round":
+			return _round(args)
+		"max", "min":
+			if args.size() < 2:
+				_fail("TypeError", "%s() necesita al menos dos valores" % name)
+				return null
+			var best: Variant = args[0]
+			for v: Variant in args.slice(1):
+				var better: Variant = _binary(">" if name == "max" else "<", v, best)
+				if not _err.is_empty():
+					return null
+				if better:
+					best = v
+			return best
 	return null
 
 
-const VERBS := {"+": "sumar", "-": "restar", "*": "multiplicar", "/": "dividir", "//": "dividir", "%": "dividir",
+## round(x) redondea al par más cercano como Python (round(2.5) == 2); round(x, n) da float.
+func _round(args: Array) -> Variant:
+	if args.is_empty() or args.size() > 2 or not _is_num(args[0]):
+		_fail("TypeError", "round() necesita un número")
+		return null
+	var x := float(_num(args[0]))
+	if args.size() == 2:
+		if typeof(args[1]) != TYPE_INT:
+			_fail("TypeError", "la cantidad de decimales de round() tiene que ser int")
+			return null
+		var r := ("%." + str(maxi(0, args[1])) + "f") % x
+		return r.to_float() if typeof(_num(args[0])) == TYPE_FLOAT else int(r.to_float())
+	var f := floorf(x)
+	var diff := x - f
+	var n := int(f)
+	if diff > 0.5 or (diff == 0.5 and n % 2 != 0):
+		n += 1
+	return n
+
+
+func _method(node: Dictionary) -> Variant:
+	var obj: Variant = _eval(node["obj"])
+	if not _err.is_empty():
+		return null
+	var name: String = node["name"]
+	if type_name(obj) != "str" or not STR_METHODS.has(name):
+		_fail("AttributeError", "'%s' object has no attribute '%s'" % [type_name(obj), name])
+		return null
+	var args: Array = []
+	for a: Variant in node["args"]:
+		args.append(_eval(a))
+		if not _err.is_empty():
+			return null
+	for a: Variant in args:
+		if type_name(a) != "str":
+			_fail("TypeError", "%s() necesita textos como argumentos" % name)
+			return null
+	var s: String = obj
+	var need := {"replace": 2, "count": 1, "startswith": 1, "endswith": 1, "find": 1}
+	if args.size() != int(need.get(name, 0)):
+		_fail("TypeError", "%s() recibe %d argumento(s)" % [name, int(need.get(name, 0))])
+		return null
+	match name:
+		"upper":
+			return s.to_upper()
+		"lower":
+			return s.to_lower()
+		"strip":
+			return s.strip_edges()
+		"title":
+			var words := s.split(" ")
+			for i in words.size():
+				words[i] = words[i].substr(0, 1).to_upper() + words[i].substr(1).to_lower()
+			return " ".join(words)
+		"capitalize":
+			return s.substr(0, 1).to_upper() + s.substr(1).to_lower()
+		"replace":
+			return s.replace(args[0], args[1])
+		"count":
+			return s.count(args[0])
+		"startswith":
+			return s.begins_with(args[0])
+		"endswith":
+			return s.ends_with(args[0])
+		"isdigit":
+			return s != "" and s.is_valid_int() and not s.begins_with("-") and not s.begins_with("+")
+		"isalpha":
+			if s == "":
+				return false
+			for ch in s:
+				if not (ch.to_lower() != ch.to_upper()):
+					return false
+			return true
+		"find":
+			return s.find(args[0])
+	return null
+
+
+const VERBS := {"+": "sumar", "-": "restar", "*": "multiplicar", "/": "dividir", "//": "dividir", "%": "dividir", "**": "elevar",
 	"<": "comparar", ">": "comparar", "<=": "comparar", ">=": "comparar"}
 
 
@@ -643,6 +929,13 @@ func _binary(op: String, a: Variant, b: Variant) -> Variant:
 					_fail("ZeroDivisionError", "división por cero")
 					return null
 				return float(x) / float(y)
+			"**":
+				if typeof(x) == TYPE_INT and typeof(y) == TYPE_INT and y >= 0:
+					var result := 1
+					for _i in y:
+						result *= x
+					return result
+				return pow(float(x), float(y))
 			"//", "%":
 				if float(y) == 0.0:
 					_fail("ZeroDivisionError", "división por cero")
