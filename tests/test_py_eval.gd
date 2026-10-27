@@ -104,3 +104,58 @@ func test_repr() -> void:
 	check_eq(PyEval.repr(true), "True", "repr de bool")
 	check_eq(PyEval.repr(2.0), "2.0", "repr de float")
 	check_eq(PyEval.repr("it's"), "\"it's\"", "repr con comilla simple")
+
+
+func test_comparaciones() -> void:
+	_ok("8 > 5", true)
+	_ok("3 >= 3", true)
+	_ok("2 < 1", false)
+	_ok("4 <= 6", true)
+	_ok("poder > limite", true, {"poder": 8, "limite": 5})
+	_ok("1 < 2 < 3", true)
+	_ok("1 < 3 < 2", false)
+	_ok("'abc' < 'abd'", true)
+	_ok("True > 0", true)
+	var r := _err("10 > '5'", "TypeError")
+	check_eq(r["message"], "TypeError: no se puede comparar int y str con >", "mensaje al comparar tipos distintos")
+
+
+func test_and_or_not() -> void:
+	_ok("True and False", false)
+	_ok("True or False", true)
+	_ok("not True", false)
+	_ok("not 0", true)
+	_ok("llave and mapa", false, {"llave": true, "mapa": false})
+	_ok("not abierto and llave", true, {"abierto": false, "llave": true})
+	_ok("edad >= 12 and tiene_mapa", false, {"edad": 15, "tiene_mapa": false})
+	_ok("1 + 1 == 2 and not 3 > 4", true)
+	# Como en Python: devuelven un operando y cortan antes de evaluar el resto.
+	_ok("0 or 'hola'", "hola")
+	_ok("'' and nadie", "")
+	_ok("True or nadie", true)
+	_err("False or nadie", "NameError")
+	_err("True and", "SyntaxError")
+
+
+func test_if_elif_else() -> void:
+	var code := ["if poder > 5:", "    camino = 'puente'", "elif poder > 2:", "    camino = 'cueva'", "else:", "    camino = 'río'"]
+	var cases := {7: "puente", 4: "cueva", 1: "río", 5: "cueva"}
+	for p: int in cases:
+		var r := PyEval.run(code, {"poder": p})
+		check(r["ok"], "if con poder=%d: %s" % [p, r["message"]])
+		check_eq(r["env"].get("camino"), cases[p], "camino con poder=%d" % p)
+	var r2 := PyEval.run(["x = 3", "if x == 5:", "    print('cinco')", "elif x < 5:", "    print('menos')", "    print('listo')", "else:", "    print('más')", "print('fin')"])
+	check_eq(r2["output"], "menos\nlisto\nfin", "solo corre la rama elegida")
+	r2 = PyEval.run(["if True:", "    if False:", "        print('a')", "    else:", "        print('b')"])
+	check_eq(r2["output"], "b", "if anidado")
+	r2 = PyEval.run(["if 0:", "    print('no')"])
+	check_eq(r2["output"], "", "if sin else que no entra")
+
+
+func test_errores_de_if() -> void:
+	check_eq(PyEval.run(["if 1 > 0", "    print('x')"])["error"], "SyntaxError", "falta ':'")
+	check_eq(PyEval.run(["if 1 > 0:", "print('x')"])["error"], "IndentationError", "falta la sangría")
+	check_eq(PyEval.run(["print('a')", "    print('b')"])["error"], "IndentationError", "sangría inesperada")
+	check_eq(PyEval.run(["else:", "    print('x')"])["error"], "SyntaxError", "else suelto")
+	check_eq(PyEval.run(["if x > 1:", "    print('x')"])["error"], "NameError", "variable sin definir en la condición")
+	check_eq(PyEval.run(["if 'a' > 1:", "    print('x')"])["error"], "TypeError", "comparar tipos distintos")

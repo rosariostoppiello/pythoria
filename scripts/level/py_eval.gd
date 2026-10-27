@@ -3,13 +3,16 @@ extends RefCounted
 ## Evaluador de un subconjunto de Python con semántica de Python (no de GDScript).
 ##
 ## Soporta: enteros, decimales, textos ('...' y "..."), True/False/None, f-strings
-## con {expresión}, + - * / // %, == !=, paréntesis, menos unario, nombres,
-## asignación simple (x = expr) y llamadas a print/str/int/len.
-## Errores como en Python: TypeError, NameError, SyntaxError, ZeroDivisionError.
+## con {expresión}, + - * / // %, comparaciones (== != < > <= >=, encadenadas),
+## and/or/not, paréntesis, menos unario, nombres, asignación simple (x = expr),
+## bloques if/elif/else con sangría y llamadas a print/str/int/len.
+## Errores como en Python: TypeError, NameError, SyntaxError, IndentationError,
+## ZeroDivisionError.
 ##
-## Resultado de evaluate/run: {ok, value, output, error, message}.
+## Resultado de evaluate/run: {ok, value, output, error, message, env}.
 
-const OPS := ["==", "!=", "//", "+", "-", "*", "/", "%", "(", ")", "=", ","]
+const OPS := ["==", "!=", "<=", ">=", "//", "<", ">", "+", "-", "*", "/", "%", "(", ")", "=", ","]
+const COMPARE_OPS := ["==", "!=", "<", ">", "<=", ">="]
 const BUILTINS := ["print", "str", "int", "len"]
 
 var env: Dictionary = {}
@@ -33,20 +36,35 @@ static func evaluate(src: String, variables: Dictionary = {}) -> Dictionary:
 	return e._result(value)
 
 
-## Ejecuta varias líneas (asignaciones, print, expresiones). output = lo impreso.
+## Ejecuta varias líneas (asignaciones, print, expresiones, if/elif/else).
+## output = lo impreso; env = variables al terminar.
 static func run(lines: Array, variables: Dictionary = {}) -> Dictionary:
 	var e := PyEval.new()
 	e.env = variables.duplicate()
+	var prog: Array[Dictionary] = []
 	for line: String in lines:
-		if line.strip_edges() == "" or line.strip_edges().begins_with("#"):
+		var clean := line.replace("\t", "    ")
+		if clean.strip_edges() == "" or clean.strip_edges().begins_with("#"):
 			continue
-		var ast: Variant = e._parse_line(line)
-		if not e._err.is_empty():
-			break
-		e._exec(ast)
-		if not e._err.is_empty():
-			break
+		var stripped := clean.strip_edges(true, false)
+		prog.append({"indent": clean.length() - stripped.length(), "text": stripped.strip_edges()})
+	if not prog.is_empty():
+		e._exec_block(prog, 0, prog.size(), int(prog[0]["indent"]))
 	return e._result(null)
+
+
+## Verdad de Python: 0, "", None y False son falsos.
+static func truthy(v: Variant) -> bool:
+	match typeof(v):
+		TYPE_BOOL:
+			return v
+		TYPE_INT, TYPE_FLOAT:
+			return v != 0
+		TYPE_STRING:
+			return v != ""
+		TYPE_NIL:
+			return false
+	return true
 
 
 # --- Tipos y conversión a texto ---------------------------------------------
@@ -121,8 +139,8 @@ func _fail(kind: String, msg: String) -> void:
 
 func _result(value: Variant) -> Dictionary:
 	if not _err.is_empty():
-		return {"ok": false, "value": null, "output": "\n".join(output), "error": _err["error"], "message": _err["message"]}
-	return {"ok": true, "value": value, "output": "\n".join(output), "error": "", "message": ""}
+		return {"ok": false, "value": null, "output": "\n".join(output), "error": _err["error"], "message": _err["message"], "env": env}
+	return {"ok": true, "value": value, "output": "\n".join(output), "error": "", "message": "", "env": env}
 
 
 # --- Tokenizador -------------------------------------------------------------
@@ -246,12 +264,44 @@ func _parse_line(src: String) -> Variant:
 	return ast
 
 
+func _is_word(w: String) -> bool:
+	return _peek()["t"] == "NAME" and _peek()["v"] == w
+
+
 func _parse_expr() -> Variant:
-	var left: Variant = _parse_arith()
-	while _err.is_empty() and (_is_op("==") or _is_op("!=")):
-		var op: String = _next()["v"]
-		left = {"k": "bin", "op": op, "l": left, "r": _parse_arith()}
+	var left: Variant = _parse_and()
+	while _err.is_empty() and _is_word("or"):
+		_next()
+		left = {"k": "or", "l": left, "r": _parse_and()}
 	return left
+
+
+func _parse_and() -> Variant:
+	var left: Variant = _parse_not()
+	while _err.is_empty() and _is_word("and"):
+		_next()
+		left = {"k": "and", "l": left, "r": _parse_not()}
+	return left
+
+
+func _parse_not() -> Variant:
+	if _is_word("not"):
+		_next()
+		return {"k": "not", "v": _parse_not()}
+	return _parse_compare()
+
+
+## Comparaciones encadenadas como en Python: a < b < c es (a < b) and (b < c).
+func _parse_compare() -> Variant:
+	var first: Variant = _parse_arith()
+	var ops: Array = []
+	var operands: Array = [first]
+	while _err.is_empty() and _peek()["t"] == "OP" and COMPARE_OPS.has(_peek()["v"]):
+		ops.append(_next()["v"])
+		operands.append(_parse_arith())
+	if ops.is_empty():
+		return first
+	return {"k": "cmp", "ops": ops, "operands": operands}
 
 
 func _parse_arith() -> Variant:
@@ -288,6 +338,9 @@ func _parse_primary() -> Variant:
 			return _parse_fstring(t["v"])
 		"NAME":
 			match t["v"]:
+				"and", "or", "not", "if", "elif", "else":
+					_fail("SyntaxError", "'%s' no puede ir acá" % t["v"])
+					return null
 				"True":
 					return {"k": "lit", "v": true}
 				"False":
@@ -360,6 +413,79 @@ func _parse_fstring(body: String) -> Variant:
 
 # --- Evaluación ----------------------------------------------------------------
 
+## Ejecuta las líneas [start, end) que tienen sangría `indent`, con if/elif/else.
+func _exec_block(prog: Array[Dictionary], start: int, end: int, indent: int) -> void:
+	var i := start
+	while i < end and _err.is_empty():
+		var line: Dictionary = prog[i]
+		var text: String = line["text"]
+		if int(line["indent"]) != indent:
+			_fail("IndentationError", "sangría inesperada en: %s" % text)
+			return
+		if _starts_with_word(text, "elif") or _starts_with_word(text, "else"):
+			_fail("SyntaxError", "'%s' sin un if antes" % text.split(" ")[0].trim_suffix(":"))
+			return
+		if not _starts_with_word(text, "if"):
+			var ast: Variant = _parse_line(text)
+			if _err.is_empty():
+				_exec(ast)
+			i += 1
+			continue
+		# Cadena if / elif / else: se junta cada encabezado con su bloque.
+		var branches: Array[Dictionary] = []
+		var keyword := "if"
+		while true:
+			var header: String = prog[i]["text"]
+			if not header.ends_with(":"):
+				_fail("SyntaxError", "falta ':' al final de: %s" % header)
+				return
+			var cond := header.substr(keyword.length(), header.length() - keyword.length() - 1).strip_edges()
+			if keyword != "else" and cond == "":
+				_fail("SyntaxError", "falta la condición después de '%s'" % keyword)
+				return
+			if keyword == "else" and cond != "":
+				_fail("SyntaxError", "else no lleva condición")
+				return
+			var body_start := i + 1
+			var body_end := body_start
+			while body_end < end and int(prog[body_end]["indent"]) > indent:
+				body_end += 1
+			if body_end == body_start:
+				_fail("IndentationError", "falta el bloque con sangría después de: %s" % header)
+				return
+			branches.append({"cond": cond, "kw": keyword, "start": body_start, "end": body_end})
+			i = body_end
+			if keyword == "else" or i >= end or int(prog[i]["indent"]) != indent:
+				break
+			var nxt: String = prog[i]["text"]
+			if _starts_with_word(nxt, "elif"):
+				keyword = "elif"
+			elif _starts_with_word(nxt, "else"):
+				keyword = "else"
+			else:
+				break
+		for b: Dictionary in branches:
+			var take := true
+			if b["kw"] != "else":
+				var cond_ast: Variant = _parse_line(b["cond"])
+				if not _err.is_empty():
+					return
+				take = truthy(_eval(cond_ast))
+				if not _err.is_empty():
+					return
+			if take:
+				var s: int = b["start"]
+				_exec_block(prog, s, b["end"], int(prog[s]["indent"]))
+				break
+
+
+static func _starts_with_word(text: String, word: String) -> bool:
+	if not text.begins_with(word):
+		return false
+	var rest := text.substr(word.length())
+	return rest == "" or rest[0] == " " or rest[0] == ":" or rest[0] == "("
+
+
 func _exec(ast: Variant) -> void:
 	if typeof(ast) == TYPE_DICTIONARY and ast.get("k") == "assign":
 		var v: Variant = _eval(ast["value"])
@@ -401,6 +527,30 @@ func _eval(node: Variant) -> Variant:
 			return s
 		"call":
 			return _call(node)
+		"not":
+			var nv: Variant = _eval(node["v"])
+			return null if not _err.is_empty() else not truthy(nv)
+		"and", "or":
+			# Igual que Python: devuelve uno de los operandos y corta apenas sabe el resultado.
+			var lv: Variant = _eval(node["l"])
+			if not _err.is_empty():
+				return null
+			if truthy(lv) == (node["k"] == "or"):
+				return lv
+			return _eval(node["r"])
+		"cmp":
+			var left: Variant = _eval(node["operands"][0])
+			for i in (node["ops"] as Array).size():
+				var right: Variant = _eval(node["operands"][i + 1])
+				if not _err.is_empty():
+					return null
+				var ok: Variant = _binary(node["ops"][i], left, right)
+				if not _err.is_empty():
+					return null
+				if not ok:
+					return false
+				left = right
+			return true
 		"bin":
 			var a: Variant = _eval(node["l"])
 			var b: Variant = _eval(node["r"])
@@ -450,7 +600,8 @@ func _call(node: Dictionary) -> Variant:
 	return null
 
 
-const VERBS := {"+": "sumar", "-": "restar", "*": "multiplicar", "/": "dividir", "//": "dividir", "%": "dividir"}
+const VERBS := {"+": "sumar", "-": "restar", "*": "multiplicar", "/": "dividir", "//": "dividir", "%": "dividir",
+	"<": "comparar", ">": "comparar", "<=": "comparar", ">=": "comparar"}
 
 
 func _binary(op: String, a: Variant, b: Variant) -> Variant:
@@ -461,6 +612,22 @@ func _binary(op: String, a: Variant, b: Variant) -> Variant:
 			return not py_equal(a, b)
 	var na := _is_num(a)
 	var nb := _is_num(b)
+	if op in ["<", ">", "<=", ">="]:
+		var comparable := (na and nb) or (type_name(a) == "str" and type_name(b) == "str")
+		if not comparable:
+			_fail("TypeError", "no se puede comparar %s y %s con %s" % [type_name(a), type_name(b), op])
+			return null
+		var x2: Variant = _num(a) if na else a
+		var y2: Variant = _num(b) if nb else b
+		match op:
+			"<":
+				return x2 < y2
+			">":
+				return x2 > y2
+			"<=":
+				return x2 <= y2
+			">=":
+				return x2 >= y2
 	if na and nb:
 		var x: Variant = _num(a)
 		var y: Variant = _num(b)
