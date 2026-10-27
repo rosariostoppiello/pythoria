@@ -18,3 +18,6 @@
 - **Pistas y XP**: cada pista baja la recompensa del nivel (50 − 10 por pista, mínimo 10); no se descuenta XP ya ganado. Máximo 3 pistas por nivel. El minijuego y el boss no tienen pistas y dan 100 y 200 XP.
 - **Racha**: se actualiza al resolver cualquier casita (aunque sea repetida), comparando la fecha local `YYYY-MM-DD` con `last_played_day`.
 - **Guardado ilegible** (JSON roto): se ignora con un aviso y se arranca con valores por defecto; el archivo se reescribe en el próximo guardado.
+- **Mapa de sección**: grilla de 64 px generada con `SectionLayout` (determinista por mundo). El camino se calcula con BFS entre el inicio y la puerta de cada casita (la celda de abajo), y los árboles y el agua nunca se ponen pegados al camino, así todas las puertas son alcanzables. El mapa mide (x máx de casitas + 3) × 11 celdas y la cámara sigue al aprendiz.
+- **Animación del aprendiz**: saltito de 2 frames al caminar y "respiración" (escala vertical) quieto, sin sprites extra.
+- **Texturas en `_draw()`**: con el renderer de compatibilidad de Godot 4.7, una textura cargada dentro del primer `_draw()` se pinta blanca. Se cargan en `_ready()` y se redibuja un frame después.
