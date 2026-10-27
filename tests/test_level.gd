@@ -290,3 +290,29 @@ func test_bola_de_cristal() -> void:
 		check_eq(r["status"], "success", "ronda %d" % (i + 1))
 	check(GameState.is_completed("w2_mini"), "minijuego completado")
 	check_eq(GameState.house_state("w2_boss"), "open", "se abre el Guardián")
+
+
+## Ningún nivel ni ronda de boss puede empujar el botón Lanzar fuera de la pantalla.
+func test_lanzar_siempre_visible() -> void:
+	for world in [1, 2]:
+		for id: String in ContentDB.house_ids(world):
+			var content := ContentDB.get_content(id)
+			if content.has("kind"):
+				continue  # minijuegos: otra escena
+			await _open(id)
+			var rounds: int = (content["rounds"] as Array).size() if scene.is_boss else 1
+			for i in rounds:
+				if scene.is_boss:
+					scene.round_idx = i
+					scene._load_board()
+				# Peor caso: todos los frascos llenos (el código en vivo es más largo).
+				if scene.board is FrascoBoard:
+					var b: FrascoBoard = scene.board
+					for j in b.jar_token.size():
+						b.place(j, j)
+				for f in 3:
+					await tree.process_frame
+				var bottom: float = scene._launch.get_global_rect().end.y
+				check(bottom <= 720.0, "%s ronda %d: Lanzar queda en y=%.0f, fuera de la pantalla" % [id, i + 1, bottom])
+			scene.queue_free()
+			await tree.process_frame

@@ -38,15 +38,28 @@ func _ready() -> void:
 	main.position = Vector2(16, 70)
 	main.size = Vector2(1248, 640)
 	add_child(main)
+	# La columna izquierda (consigna + Ada) también scrollea si la consigna es larga.
+	var left_scroll := ScrollContainer.new()
+	left_scroll.custom_minimum_size = Vector2(382, 0)
+	left_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	main.add_child(left_scroll)
 	_left = UI.vbox(12)
 	_left.custom_minimum_size = Vector2(370, 0)
-	main.add_child(_left)
+	_left.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	left_scroll.add_child(_left)
 	var right := UI.vbox(12)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main.add_child(right)
+	# El tablero va en un scroll para que, si es alto, los botones de abajo sigan visibles.
+	var scroll := ScrollContainer.new()
+	scroll.name = "BoardScroll"
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	right.add_child(scroll)
 	_board_holder = UI.vbox(0)
+	_board_holder.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_board_holder.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	right.add_child(_board_holder)
+	scroll.add_child(_board_holder)
 
 	var actions := UI.hbox(12)
 	actions.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -146,7 +159,7 @@ func _build_ada_panel() -> void:
 	box.add_child(row)
 	var bubble := UI.panel()
 	box.add_child(bubble)
-	_hint_label = UI.label("Ada: \"Si te trabás, el búho tiene una pista. Cada pista cuesta XP, pero nunca te bloquea.\"", "InkLabel")
+	_hint_label = UI.label("Ada: \"Si te trabás, pedile una pista al búho. Cuesta XP, pero nunca te bloquea.\"", "InkLabel")
 	_hint_label.add_theme_font_size_override("font_size", 17)
 	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint_label.custom_minimum_size = Vector2(320, 0)

@@ -250,5 +250,8 @@ func refresh() -> void:
 	if _op_label and names.size() == 2:
 		var parts := expr.split(" ")
 		_op_label.text = parts[1] if parts.size() == 3 and parts[0] == names[0] and parts[2] == names[1] else ""
-	code_label.text = "\n".join(FrascoLogic.code_lines(puzzle, values(), op))
+	var lines := FrascoLogic.code_lines(puzzle, values(), op)
+	code_label.text = "\n".join(lines)
+	# Los bloques if/elif/else largos van más chicos para que entre todo el tablero.
+	code_label.add_theme_font_size_override("font_size", 15 if lines.size() > 7 else 20)
 	changed.emit()
