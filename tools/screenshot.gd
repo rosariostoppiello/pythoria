@@ -28,11 +28,19 @@ func _run() -> void:
 	change_scene_to_file(scene_path)
 	for i in frames:
 		await process_frame
-	var hook := OS.get_environment("PY_HOOK")
-	if hook != "" and current_scene.has_method(hook):
-		await current_scene.call(hook)
-		for i in 10:
+	# PY_EXPR: expresiones separadas por ";" que se ejecutan sobre la escena (ej. "board.place(0, 0)").
+	var exprs := OS.get_environment("PY_EXPR")
+	if exprs != "":
+		for src: String in exprs.split(";"):
+			var e := Expression.new()
+			if e.parse(src.strip_edges()) == OK:
+				e.execute([], current_scene)
+			else:
+				push_error("PY_EXPR inválida: " + src)
+		for i in int(OS.get_environment("PY_WAIT")) if OS.get_environment("PY_WAIT") != "" else 20:
 			await process_frame
+		if OS.get_environment("PY_SECONDS") != "":
+			await create_timer(float(OS.get_environment("PY_SECONDS"))).timeout
 	var img := root.get_texture().get_image()
 	img.save_png(out)
 	print("captura: ", out)

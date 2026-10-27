@@ -35,5 +35,7 @@ func _run() -> void:
 				print("  FALLA %s::%s" % [file, name])
 				for f: String in t.failures:
 					print("        - ", f)
+	for i in 3:
+		await process_frame
 	print("\n%d tests, %d fallaron" % [total, failed])
 	quit(1 if failed > 0 or total == 0 else 0)

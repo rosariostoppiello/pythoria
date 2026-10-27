@@ -11,7 +11,7 @@ func _ready() -> void:
 	layer = 40
 	var success := bool(info.get("success", false))
 	var dim := ColorRect.new()
-	dim.color = ThemeColors.SOMBRA
+	dim.color = Color(ThemeColors.NOCHE, 0.8)
 	add_child(UI.full_rect(dim))
 	var center := CenterContainer.new()
 	add_child(UI.full_rect(center))

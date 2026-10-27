@@ -29,7 +29,9 @@ func after_each() -> void:
 
 
 func test_escenas_principales() -> void:
+	var houses := {"level": "w1_l1", "minigame": "w1_mini", "coming_soon": "w2_l1"}
 	for key: String in SceneManager.SCENES:
+		SceneManager.house_id = houses.get(key, "w1_l1")
 		var node: Node = await _smoke(SceneManager.SCENES[key])
 		if node:
 			node.queue_free()

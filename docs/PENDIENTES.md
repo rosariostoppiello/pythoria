@@ -25,3 +25,13 @@
 - **Mundos 4 a 8**: si se llegaran a desbloquear (solo posible con el botón debug), se muestran como "Próximamente" y no se puede entrar porque no tienen casitas en el JSON.
 - **Casitas de boss**: el techo se tiñe rojizo cuando están disponibles, para distinguirlas (sin sprite extra).
 - **Casitas de mundos placeholder** (2 y 3): abren "Próximamente" con los temas del mundo; el botón "Completar (debug)" solo existe si `OS.is_debug_build()` (en el editor sí, en un export release no).
+- **Frascos sin restricción de tipo**: cada frasco muestra qué esencia espera ("esencia: int (número)"), pero acepta cualquier ficha, como una variable de Python. Si se mezclan tipos, el error aparece al Lanzar (Quimera Tipos). Si el frasco rechazara la ficha, la Quimera nunca podría aparecer.
+- **Fichas de un solo uso**: cada ficha va a un frasco a la vez (por eso w1_l4 trae dos 7). Tocar una ficha la pone en el primer frasco vacío; tocar un frasco lo vacía; también se arrastra de un frasco a otro o de vuelta a la bandeja.
+- **Correcto = valor y tipo**: se evalúa la expresión y se compara con `goal` (mismo valor y mismo tipo de Python: `True` no cuenta como `1`). No se compara contra `solution`; esas soluciones se usan solo en los tests para comprobar que cada nivel se puede resolver.
+- **Sin operador elegido** en niveles con `OP`: se trata como SyntaxError (aparece el Gremlin Sintaxis).
+- **Resultado distinto** (sin error): la "criatura" de la pantalla de fallo es el caldero, con "Obtuviste X, pero el caldero pedía Y".
+- **Mensajes de error**: en español con el nombre de error de Python (`TypeError: no se puede sumar str y int`, `NameError: name 'bonus' is not defined`).
+- **Evaluador** (`scripts/level/py_eval.gd`): además de lo pedido soporta `/ // % !=`, paréntesis, menos unario, `True/False/None` y `print/str/int/len`, para poder reutilizarlo en mundos siguientes.
+- **Minijuego "Completa el hechizo"**: el código completado se ejecuta con el evaluador y se compara lo impreso con `output`. Así `5 = 5` da SyntaxError (Gremlin), `nombre = Ada` da NameError (Fantasma) y `4 + 3` da "imprimió 7, tenía que imprimir 12". Las fichas del minijuego se pueden reusar.
+- **Boss**: cada ronda acertada baja un tercio de la barra de vida; un fallo muestra la criatura y permite reintentar la misma ronda. "Continuar" después de vencerlo va al mapa de mundos, donde el aprendiz camina al mundo 2.
+- **Pistas ya pagadas**: si salís y volvés a un nivel, las pistas que ya pediste se muestran gratis.
