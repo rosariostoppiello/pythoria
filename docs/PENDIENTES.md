@@ -11,3 +11,7 @@
 - **Paleta del pixel art**: además de los 8 colores fijos se usan los colores de mundo de `data/worlds.json` (verde, naranja, azul, marrón, gris) para naturaleza y detalles (pasto, árboles, agua, gato, libros). Dorado solo en recompensas (estrella, banda del sombrero, nodo completado), rojo solo en criaturas del Caos.
 - **Sprites extra** además de los de CLAUDE.md: `candle_books_lit` (vela encendida para las pistas) y `star` (recompensa en la pantalla de resultado).
 - **Filtro nearest** global en `project.godot` (`default_texture_filter=0`) para que todo el pixel art se vea nítido.
+- **Pausa y resultado como overlays**: se agregan encima de la escena actual (CanvasLayer), así "Reintentar" después de un fallo cierra el resultado y deja el tablero como estaba (reintento inmediato).
+- **Jugar con partida guardada**: pide confirmación antes de borrar el progreso. "Continuar" aparece solo si existe `user://save.json`.
+- **Salir** no se muestra en la versión web (no se puede cerrar la pestaña desde el juego).
+- **Esc en el mapa de sección** también abre la pausa (con "Mapa de mundos" y "Menú").

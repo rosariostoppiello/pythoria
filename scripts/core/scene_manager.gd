@@ -62,6 +62,12 @@ func _setup_inputs() -> void:
 			InputMap.action_add_event(action, ev)
 
 
+func _unhandled_input(event: InputEvent) -> void:
+	if event.is_action_pressed("pause") and not _busy:
+		toggle_pause()
+		get_viewport().set_input_as_handled()
+
+
 func set_state(s: State) -> void:
 	state = s
 	state_changed.emit(s)
