@@ -41,11 +41,12 @@ static func check(round: Dictionary, choices: Array) -> Dictionary:
 		out["message"] = "Todavía hay huecos vacíos en el hechizo."
 		return out
 	var lines := fill(round["code"], choices)
-	var r := PyEval.run(lines)
+	var r := PyEval.run(lines, {}, round.get("inputs", []))
 	out["output"] = r["output"]
 	if not r["ok"]:
 		var map := {
 			"TypeError": ["type_error", "¡La Quimera Tipos!", "quimera_tipos", "Mezclaste esencias de distinto tipo."],
+			"ValueError": ["type_error", "¡La Quimera Tipos!", "quimera_tipos", "Ese valor no sirve para esa operación o ese formato."],
 			"NameError": ["name_error", "¡El Fantasma Sin Nombre!", "fantasma_sin_nombre", "Usaste un nombre que no existe. ¿Te faltaron comillas?"],
 			"SyntaxError": ["syntax_error", "¡El Gremlin Sintaxis!", "gremlin_sintaxis", "El hechizo está mal escrito."],
 		}
@@ -70,28 +71,28 @@ static func check(round: Dictionary, choices: Array) -> Dictionary:
 
 # --- Bola de cristal: predecir qué imprime un código --------------------------
 
-## Lo que el código imprime de verdad (la respuesta correcta sale de ejecutarlo).
+## Lo que pasa de verdad al ejecutar el código: lo impreso o, si falla, el nombre
+## del error (por ejemplo "TypeError"). La respuesta correcta sale de ejecutarlo.
 static func prediction_answer(round: Dictionary) -> String:
-	return str(PyEval.run(round["code"])["output"])
+	var r := PyEval.run(round["code"], {}, round.get("inputs", []))
+	return str(r["output"]) if r["ok"] else str(r["error"])
 
 
 static func check_prediction(round: Dictionary, choice: String) -> Dictionary:
 	var out := {"status": "", "title": "", "message": "", "detail": "", "creature": "", "output": ""}
-	var r := PyEval.run(round["code"])
+	var r := PyEval.run(round["code"], {}, round.get("inputs", []))
+	var answer := prediction_answer(round)
 	out["output"] = r["output"]
 	if not r["ok"]:
-		out["status"] = "error"
-		out["title"] = "La bola se nubló"
-		out["creature"] = "crystal_ball"
 		out["detail"] = r["message"]
-		return out
-	if choice == r["output"]:
+	if choice == answer:
 		out["status"] = "success"
 		out["title"] = "¡Lo viste venir!"
-		out["message"] = "El hechizo imprime: %s" % r["output"]
+		out["message"] = "El hechizo imprime: %s" % answer if r["ok"] else "El hechizo falla con %s." % answer
 	else:
 		out["status"] = "wrong"
 		out["title"] = "La bola mostraba otra cosa"
 		out["creature"] = "crystal_ball"
-		out["message"] = "Elegiste «%s», pero el hechizo imprime «%s». Seguí las condiciones de arriba hacia abajo." % [choice.replace("\n", " / "), str(r["output"]).replace("\n", " / ")]
+		var real := "imprime «%s»" % answer.replace("\n", " / ") if r["ok"] else "falla con %s" % answer
+		out["message"] = "Elegiste «%s», pero el hechizo %s. Seguilo línea por línea." % [choice.replace("\n", " / "), real]
 	return out

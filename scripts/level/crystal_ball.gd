@@ -33,7 +33,7 @@ func _ready() -> void:
 	var mbox := UI.vbox(8)
 	mission.add_child(mbox)
 	mbox.add_child(UI.label(str(content.get("title", "")), "InkTitle"))
-	var how := UI.label("La bola de cristal muestra un hechizo. Leelo de arriba hacia abajo y elegí qué va a imprimir.", "InkLabel")
+	var how := UI.label("La bola de cristal muestra un hechizo. Seguilo línea por línea y elegí qué va a pasar: qué imprime, o qué error da.", "InkLabel")
 	how.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	how.custom_minimum_size = Vector2(330, 0)
 	mbox.add_child(how)
@@ -81,6 +81,9 @@ func current_round() -> Dictionary:
 func _load_round() -> void:
 	var r := current_round()
 	_code_label.text = "\n".join(r["code"])
+	var inputs: Array = r.get("inputs", [])
+	if not inputs.is_empty():
+		_code_label.text += "\n\n# entrada para input(): %s" % " / ".join(PackedStringArray(inputs.map(func(v: Variant) -> String: return str(v))))
 	for b in option_buttons:
 		b.queue_free()
 	option_buttons.clear()

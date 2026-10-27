@@ -138,7 +138,9 @@ func reward_for(house_id: String) -> int:
 			return int(cfg["minigame"])
 		"boss":
 			return int(cfg["boss"])
-	var base := int(cfg["per_level"]) - int(cfg["hint_cost"]) * hints_for(house_id)
+	# Un nivel puede valer más que el estándar con "xp" en el JSON (los de escribir código).
+	var per_level := int(ContentDB.get_content(house_id).get("xp", cfg["per_level"]))
+	var base := per_level - int(cfg["hint_cost"]) * hints_for(house_id)
 	return maxi(int(cfg["min_per_level"]), base)
 
 

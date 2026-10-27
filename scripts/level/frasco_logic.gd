@@ -194,7 +194,11 @@ static func check(puzzle: Dictionary, values: Dictionary, op: String) -> Diction
 		out["status"] = "wrong"
 		out["title"] = "El caldero no reaccionó"
 		out["creature"] = "cauldron"
-		out["message"] = "Obtuviste %s, pero el caldero pedía %s." % [PyEval.repr(r["value"]), PyEval.repr(expected)]
+		if PyEval.type_name(r["value"]) != PyEval.type_name(expected) and PyEval.py_equal(r["value"], expected):
+			out["message"] = "Obtuviste %s (%s), pero el caldero pedía %s (%s): mismo valor, distinto tipo." % [
+				PyEval.repr(r["value"]), PyEval.type_name(r["value"]), PyEval.repr(expected), PyEval.type_name(expected)]
+		else:
+			out["message"] = "Obtuviste %s, pero el caldero pedía %s." % [PyEval.repr(r["value"]), PyEval.repr(expected)]
 	return out
 
 
@@ -224,9 +228,20 @@ static func solutions(puzzle: Dictionary) -> Array[Dictionary]:
 		var values := {}
 		for j: Dictionary in puzzle.get("jars", []):
 			if s.has(j["name"]):
-				values[j["name"]] = typed(s[j["name"]], str(j.get("accepts", "")))
+				values[j["name"]] = _solution_value(puzzle, s[j["name"]], str(j.get("accepts", "")))
 		out.append({"values": values, "op": str(s.get("op", default_op))})
 	return out
+
+
+## Valor de una solución con su tipo. Si el frasco acepta "any", el tipo sale de la ficha
+## que tiene ese mismo valor en el JSON (5 es int, "" es str).
+static func _solution_value(puzzle: Dictionary, raw: Variant, accepts: String) -> Variant:
+	if accepts in ["int", "float", "str", "bool"]:
+		return typed(raw, accepts)
+	for t: Dictionary in puzzle.get("tokens", []):
+		if typeof(t.get("value")) == typeof(raw) and t.get("value") == raw:
+			return token_value(t)
+	return raw
 
 
 ## ¿Las fichas alcanzan para armar esta asignación? (cada ficha se usa una vez)

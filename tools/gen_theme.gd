@@ -129,6 +129,21 @@ static func build_theme() -> Theme:
 	t.set_type_variation("HealthBar", "ProgressBar")
 	t.set_stylebox("fill", "HealthBar", box(TC.ROJO, TC.ROJO, 0, 8, 0))
 
+	# Editor de código.
+	t.set_font("font", "CodeEdit", code)
+	t.set_font_size("font_size", "CodeEdit", 18)
+	t.set_color("font_color", "CodeEdit", TC.PERGAMINO)
+	t.set_color("caret_color", "CodeEdit", TC.LAVANDA)
+	t.set_color("selection_color", "CodeEdit", Color(TC.VIOLETA, 0.6))
+	t.set_color("current_line_color", "CodeEdit", Color(TC.NOCHE_CLARA, 0.7))
+	t.set_color("line_number_color", "CodeEdit", Color(TC.LAVANDA, 0.5))
+	t.set_color("brace_mismatch_color", "CodeEdit", TC.ROJO)
+	t.set_color("background_color", "CodeEdit", TC.TINTA)
+	t.set_stylebox("normal", "CodeEdit", box(TC.TINTA, TC.VIOLETA, 2, 10, 10))
+	var code_focus := box(TC.TINTA, TC.LAVANDA, 2, 10, 10)
+	code_focus.draw_center = false
+	t.set_stylebox("focus", "CodeEdit", code_focus)
+
 	# Popups / tooltips.
 	t.set_stylebox("panel", "PopupMenu", box(TC.NOCHE_CLARA, TC.VIOLETA, 2, 8, 8))
 	t.set_stylebox("panel", "TooltipPanel", box(TC.PERGAMINO, TC.VIOLETA, 2, 8, 8))

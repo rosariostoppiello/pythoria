@@ -152,7 +152,7 @@ func _cauldron_view() -> Control:
 
 
 static func _type_hint(t: String) -> String:
-	return {"int": "int (número)", "str": "str (texto)", "bool": "bool (verdadero/falso)"}.get(t, t)
+	return {"int": "int (número)", "str": "str (texto)", "bool": "bool (verdadero/falso)", "any": "cualquier tipo"}.get(t, t)
 
 
 # --- Estado -------------------------------------------------------------------

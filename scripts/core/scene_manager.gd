@@ -88,7 +88,7 @@ func goto_section(id: int, from_house: String = "") -> void:
 	_change("section_map", State.SECTION_MAP)
 
 
-## Entra a una casita: nivel del Frasco o la Encrucijada, boss, minijuego o "Próximamente".
+## Entra a una casita: nivel (Frasco, Encrucijada o código), boss, minijuego o "Próximamente".
 func goto_house(id: String) -> void:
 	house_id = id
 	world_id = ContentDB.world_of(id)
@@ -100,7 +100,7 @@ func goto_house(id: String) -> void:
 		key = "minigame"
 	elif str(content.get("kind", "")) == "bola_de_cristal":
 		key = "crystal_ball"
-	elif str(content.get("mechanic", "")) in ["frasco", "encrucijada"]:
+	elif str(content.get("mechanic", "")) in ["frasco", "encrucijada", "codigo"]:
 		key = "level"
 	_change(key, State.LEVEL)
 

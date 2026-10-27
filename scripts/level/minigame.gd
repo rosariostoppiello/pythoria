@@ -137,7 +137,10 @@ func _load_round() -> void:
 		_chip_row.add_child(chip)
 	_round_label.text = "Ronda %d de %d" % [round_idx + 1, (content["rounds"] as Array).size()]
 	_progress.value = round_idx
+	var inputs: Array = r.get("inputs", [])
 	_expected_label.text = "Tiene que imprimir: %s" % r["output"]
+	if not inputs.is_empty():
+		_expected_label.text += "\nEntrada para input(): %s" % " / ".join(PackedStringArray(inputs.map(func(v: Variant) -> String: return str(v))))
 	_output_label.text = ""
 	_refresh()
 

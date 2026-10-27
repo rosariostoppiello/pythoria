@@ -1,11 +1,13 @@
 extends Control
-## Nivel del Frasco o de la Encrucijada. También corre el boss (varias rondas con barra de vida).
+## Nivel del Frasco, la Encrucijada o "Escribí el hechizo" (código). También corre el boss
+## (varias rondas con barra de vida; cada ronda puede ser de cualquier mecánica).
 
 var house_id: String
 var content: Dictionary
 var is_boss := false
 var round_idx := 0
-var board: FrascoBoard
+## FrascoBoard o CodeBoard: los dos tienen cast() y clear().
+var board: Control
 
 var _board_holder: VBoxContainer
 var _left: VBoxContainer
@@ -17,7 +19,10 @@ var _enemy: TextureRect
 var _health: ProgressBar
 var _round_label: Label
 var _launch: Button
+var _reset: Button
+var _try: Button
 var _shown_hints := 0
+var _hint_view := 0
 
 
 func _ready() -> void:
@@ -51,10 +56,15 @@ func _ready() -> void:
 	_launch.focus_mode = Control.FOCUS_NONE
 	_launch.pressed.connect(launch)
 	actions.add_child(_launch)
-	var reset := UI.button("Vaciar frascos", "OutlineButton")
-	reset.focus_mode = Control.FOCUS_NONE
-	reset.pressed.connect(func() -> void: board.clear())
-	actions.add_child(reset)
+	_try = UI.button("Probar (caso 1)", "OutlineButton")
+	_try.name = "Probar"
+	_try.focus_mode = Control.FOCUS_NONE
+	_try.pressed.connect(func() -> void: board.run_sample())
+	actions.add_child(_try)
+	_reset = UI.button("", "OutlineButton")
+	_reset.focus_mode = Control.FOCUS_NONE
+	_reset.pressed.connect(func() -> void: board.clear())
+	actions.add_child(_reset)
 
 	if is_boss:
 		_build_boss_panel()
@@ -71,8 +81,12 @@ func current_puzzle() -> Dictionary:
 func _load_board() -> void:
 	if board:
 		board.queue_free()
-	board = FrascoBoard.new(current_puzzle())
+	var p := current_puzzle()
+	var is_code := CodeLogic.is_code(p)
+	board = CodeBoard.new(p) if is_code else FrascoBoard.new(p)
 	_board_holder.add_child(board)
+	_try.visible = is_code
+	_reset.text = "Restaurar código" if is_code else "Vaciar frascos"
 	if is_boss:
 		_round_label.text = "Ronda %d de %d" % [round_idx + 1, (content["rounds"] as Array).size()]
 		_refresh_boss_goal()
@@ -94,6 +108,16 @@ func _build_mission_panel(p: Dictionary) -> void:
 
 
 func _goal_row(p: Dictionary) -> Control:
+	if CodeLogic.is_code(p):
+		var task_box := UI.vbox(2)
+		task_box.name = "GoalRow"
+		task_box.add_child(UI.label("Tu tarea:", "InkTitle"))
+		var task := UI.label(str(p.get("task", "")), "InkLabel")
+		task.add_theme_font_size_override("font_size", 17)
+		task.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		task.custom_minimum_size = Vector2(320, 0)
+		task_box.add_child(task)
+		return task_box
 	var row := UI.hbox(8)
 	row.name = "GoalRow"
 	row.add_child(UI.label("Llegá a:" if FrascoLogic.is_crossroads(p) else "El caldero pide:", "InkLabel"))
@@ -127,6 +151,7 @@ func _build_ada_panel() -> void:
 	_hint_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_hint_label.custom_minimum_size = Vector2(320, 0)
 	bubble.add_child(_hint_label)
+	bubble.gui_input.connect(_on_bubble_input)
 	_hint_button = UI.button("Pedir pista", "OutlineButton")
 	_hint_button.name = "PedirPista"
 	_hint_button.focus_mode = Control.FOCUS_NONE
@@ -148,7 +173,7 @@ func _build_boss_panel() -> void:
 	panel.add_child(box)
 	box.add_child(UI.label(str(content.get("title", "Boss")), "HeaderLabel", HORIZONTAL_ALIGNMENT_CENTER))
 	# El sprite va dentro de un contenedor fijo para que el balanceo no mueva el layout.
-	_enemy = UI.sprite_rect(str(content.get("enemy", "gremlin_sintaxis")), 4.0)
+	_enemy = UI.sprite_rect(str(content.get("enemy", "gremlin_sintaxis")), 3.0)
 	_enemy.pivot_offset = _enemy.custom_minimum_size / 2
 	var holder := CenterContainer.new()
 	holder.custom_minimum_size = _enemy.custom_minimum_size + Vector2(0, 16)
@@ -189,11 +214,10 @@ func _refresh_boss_goal() -> void:
 func _update_hints() -> void:
 	var hints: Array = content.get("hints", [])
 	var shown := mini(_shown_hints, hints.size())
+	# Se ve la última pista pedida; tocando el globo se repasan las anteriores.
 	if shown > 0:
-		var lines: PackedStringArray = []
-		for i in shown:
-			lines.append("%d. %s" % [i + 1, hints[i]])
-		_hint_label.text = "\n".join(lines)
+		_hint_view = shown
+		_show_hint(shown)
 	_candle.texture = UI.tex("candle_books_lit" if shown > 0 else "candle_books")
 	var cost := int(ContentDB.xp_config()["hint_cost"])
 	_hint_button.disabled = shown >= hints.size()
@@ -202,6 +226,19 @@ func _update_hints() -> void:
 		_reward_label.text = "Ya completaste este nivel"
 	else:
 		_reward_label.text = "Recompensa: %d XP" % GameState.reward_for(house_id)
+
+
+func _show_hint(n: int) -> void:
+	var hints: Array = content.get("hints", [])
+	var more := " (tocá para repasar)" if _shown_hints > 1 else ""
+	_hint_label.text = "Pista %d de %d%s: %s" % [n, hints.size(), more, hints[n - 1]]
+
+
+func _on_bubble_input(event: InputEvent) -> void:
+	var mb := event as InputEventMouseButton
+	if mb and mb.pressed and mb.button_index == MOUSE_BUTTON_LEFT and _shown_hints > 1:
+		_hint_view = _hint_view % _shown_hints + 1
+		_show_hint(_hint_view)
 
 
 ## Muestra la siguiente pista de Ada (concepto, estructura, solución parcial).
@@ -222,7 +259,7 @@ func request_hint() -> void:
 # --- Lanzar -------------------------------------------------------------------
 
 func launch() -> Dictionary:
-	var r := board.cast()
+	var r: Dictionary = board.cast()
 	if r["status"] != "success":
 		await get_tree().create_timer(0.35).timeout
 		SceneManager.show_result({
