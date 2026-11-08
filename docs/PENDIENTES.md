@@ -91,3 +91,10 @@
 - **`sum()`** por ahora solo acepta un `range` (no hay listas todavía).
 - **Duelo de Bugs** (`kind: "duelo_de_bugs"`): cada arreglo reemplaza una línea (`{"line", "text"}`); un test verifica que el código con el bug no anda y que exactamente un arreglo lo cura. La sangría se muestra con `·` en los botones.
 - **Mundo 4** queda como "Próximamente" (sin casitas en el JSON).
+
+## Publicación en Vercel
+
+- **URL**: https://pythoria-eta.vercel.app (proyecto `pythoria` en la cuenta de Vercel de Rosario). Es pública.
+- **Cómo se publica**: `tools/deploy_web.sh` exporta la versión web y sube `build/web/` con la CLI de Vercel (`vercel deploy --prod`). Vercel no compila Godot, así que no está conectado al repo de GitHub: después de cambiar algo hay que correr el script (o `--preview` para una URL de prueba).
+- **Build release**: el botón "Completar (debug)" no aparece en la web, y el progreso de cada jugador vive en su navegador.
+- **Pendiente posible**: si el líder quiere revisar los mundos 2 y 3 sin jugar los anteriores, haría falta un "modo revisor" (por ejemplo `?revisor=1` en la URL) que desbloquee todo.

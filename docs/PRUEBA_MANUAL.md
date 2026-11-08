@@ -141,9 +141,20 @@ Se abre al vencer al Guardián. Para llegar rápido, agregá `"w2_boss"` (y `"w1
 
 ## 9. Versión web
 
+**Publicada en Vercel:** <https://pythoria-eta.vercel.app> (pública, sin login). El progreso queda guardado en el navegador de quien juega (IndexedDB), así que cada persona arranca de cero.
+
+Para volver a publicar después de cambios:
+
+```bash
+tools/deploy_web.sh            # exporta y publica en producción (misma URL)
+tools/deploy_web.sh --preview  # URL de prueba aparte, sin tocar producción
+```
+
+Para probarla local sin publicar:
+
 ```bash
 godot --headless --path . --export-release "Web" build/web/index.html
 cd build/web && python3 -m http.server 8000
 ```
 
-Abrí <http://localhost:8000> en Chrome o Firefox. Debería verse el splash con el grimorio y después el menú (sin el botón **Salir**). En web el guardado queda en el almacenamiento del navegador (IndexedDB).
+Abrí <http://localhost:8000> en Chrome o Firefox. Debería verse el splash con el grimorio y después el menú (sin el botón **Salir**).
