@@ -1,6 +1,6 @@
 # Prueba manual
 
-Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 81 tests).
+Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 95 tests).
 
 ## 0. Abrir el proyecto
 
@@ -114,12 +114,24 @@ Para llegar rápido sin jugar el mundo 1, agregá `"w1_boss"` a `completed` en `
 | Minijuego – Bola de cristal (4 rondas) | Predecí qué pasa | Las opciones pueden ser un error (`NameError`, `TypeError`). Trampas: cortocircuito de `or`, `'Ana' < 'ana'`, comparar `input()` con un número, y el orden de los `elif` en FizzBuzz. |
 | Boss – Guardián de la Puerta | Ronda 1: Encrucijada de 4 caminos (`temp = 15`, `lluvia = True` → refugio). Ronda 2: escribí la regla de entrada al bosque. Ronda 3: arreglá un `if` con tres errores (sangría, `=` en vez de `==` y falta un `:`) | Cada acierto baja la vida; al ganar, +200 XP y el camino al mundo 3. |
 
-## 7b. Mundo 3 (placeholder)
+## 7b. Mundo 3: Torre de los Rituales
 
-- Entrá al mundo 3: mapa con otra distribución de árboles y agua.
-- Cualquier casita abre **Próximamente** con los temas del mundo.
-- En el editor (build de debug) aparece **Completar (debug)**: marca la casita y abre la siguiente. Completando el boss del mundo 3 se "desbloquea" el 4, que se ve como Próximamente.
-- Los mundos 4 a 8 no tienen casitas: si llegás con el botón debug, se ven como "Próximamente" y no se puede entrar.
+Se abre al vencer al Guardián. Para llegar rápido, agregá `"w2_boss"` (y `"w1_boss"`) a `completed` en `save.json`.
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – La suma de la escalera (Frasco) | `sum(range(1, 5))`, después `range(1, 6)` | `range(1, 5)` da 10: el final no se incluye. `range(1, 6)` o `range(0, 6)` dan 15. La ficha `'6'` despierta a la Quimera. |
+| 2 – Pasos de a saltos (Frasco) | `range(10, 0, 3)` y un paso `0` | Hacia atrás con paso positivo da 0 vueltas. El paso 0 es `ValueError`. Sirven `range(0, 10, 3)`, `range(3, 10, 2)` o `range(10, 2, -2)`. |
+| 3 – Cuenta regresiva (código) | Un `while n > 0:` que nunca achica `n` | Aparece el **Ouroboros**: "el bucle nunca termina". Con `for i in range(n, 0, -1)` y el `print('¡Despegue!')` afuera del bucle → éxito. |
+| 4 – La tabla del aprendiz (código) | Diez `print` a mano | El búho pide usar un `for`. |
+| 5 – Suma de dígitos (código) | Convertir el número a texto | La consigna pide `while` y `% 10`. Con `while n > 0: suma += n % 10; n //= 10` → éxito. |
+| Minijuego – Duelo de Bugs (4 rondas) | Elegí arreglos | Se ven el código numerado, lo que debería imprimir y lo que imprime (un bucle infinito dice "se repite para siempre"). Los `·` marcan espacios de sangría: en la ronda 2 el arreglo es indentar `n -= 3`. |
+| Boss – Ouroboros | Ronda 1: `sum(range(1, 6, 2))`. Ronda 2: agregá `pasos += 1` adentro del while. Ronda 3: contraseña con `break` | Sin `break`, el búho lo pide. `for ... else:` también vale. Al ganar, +200 XP y el aprendiz camina al mundo 4, que se ve como "Próximamente". |
+
+## 7c. Mundos 4 a 8
+
+- Todavía no tienen casitas: en el mapa se ven bloqueados y, si se desbloquean, como "Próximamente".
+- La pantalla "Próximamente" con **Completar (debug)** sigue existiendo para los mundos que tengan casitas sin contenido.
 
 ## 8. Guardado
 

@@ -552,8 +552,8 @@
       "id": 3,
       "name": "Torre de los Rituales",
       "color": "#3F6FB5",
-      "status": "placeholder",
-      "topics": ["while", "for", "range", "break", "continue"],
+      "status": "playable",
+      "topics": ["while", "for", "range", "break", "continue", "acumuladores"],
       "story": "Una torre donde cada piso es un ritual que se repite, y arriba espera Ouroboros.",
       "boss": "ouroboros",
       "section_map": {
@@ -568,8 +568,279 @@
           {"id": "w3_boss", "kind": "boss", "pos": [21, 5]}
         ]
       },
-      "levels": [],
-      "placeholder_note": "Las casitas se abren y muestran 'Próximamente' con el botón de marcar como completado solo en modo debug."
+      "levels": [
+        {
+          "id": "w3_l1",
+          "title": "La suma de la escalera",
+          "mechanic": "frasco",
+          "story": "Cada escalón de la torre vale su número. El caldero pide 15: la suma de los escalones del 1 al 5. Ojo: range() no incluye el final.",
+          "goal": {"value": 15, "type": "int"},
+          "jars": [{"name": "a", "accepts": "int"}, {"name": "b", "accepts": "int"}],
+          "tokens": [
+            {"value": 0, "type": "int"},
+            {"value": 1, "type": "int"},
+            {"value": 5, "type": "int"},
+            {"value": 6, "type": "int"},
+            {"value": "6", "type": "str"}
+          ],
+          "operators": [],
+          "expression": "sum(range(a, b))",
+          "solution_any": [{"a": 1, "b": 6}, {"a": 0, "b": 6}],
+          "hints": [
+            "range(a, b) va desde a hasta b - 1: el final no se incluye.",
+            "range(1, 5) es 1, 2, 3, 4 y suma 10. Para llegar al 5 inclusive, el final tiene que ser 6.",
+            "sum(range(1, 6)) da 15. Sumar el 0 no cambia nada: range(0, 6) también sirve."
+          ]
+        },
+        {
+          "id": "w3_l2",
+          "title": "Pasos de a saltos",
+          "mechanic": "frasco",
+          "story": "El ritual tiene que repetirse exactamente 4 veces. ¿Qué range() da 4 vueltas? Hay más de una respuesta.",
+          "goal": {"value": 4, "type": "int"},
+          "jars": [
+            {"name": "inicio", "accepts": "int"},
+            {"name": "fin", "accepts": "int"},
+            {"name": "paso", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 0, "type": "int"},
+            {"value": 10, "type": "int"},
+            {"value": 3, "type": "int"},
+            {"value": 2, "type": "int"},
+            {"value": -2, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "len(range(inicio, fin, paso))",
+          "solution_any": [
+            {"inicio": 0, "fin": 10, "paso": 3},
+            {"inicio": 3, "fin": 10, "paso": 2},
+            {"inicio": 10, "fin": 2, "paso": -2}
+          ],
+          "hints": [
+            "range(inicio, fin, paso) avanza de a paso y se detiene antes de llegar a fin.",
+            "range(0, 10, 3) es 0, 3, 6, 9. Para contar hacia atrás, el paso tiene que ser negativo y el inicio mayor que el fin.",
+            "range(0, 10, 3), range(3, 10, 2) o range(10, 2, -2). Un paso de 0 es un error."
+          ]
+        },
+        {
+          "id": "w3_l3",
+          "title": "Cuenta regresiva",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Para encender la torre hay que contar hacia atrás. Si el número cambia, la cuenta tiene que adaptarse sola.",
+          "task": "Leé un número n e imprimí la cuenta regresiva desde n hasta 1, un número por línea. Al final imprimí ¡Despegue!",
+          "starter": ["n = int(input())", "", "# un bucle que cuente hacia atrás", ""],
+          "tests": [
+            {"inputs": ["3"], "output": "3\n2\n1\n¡Despegue!"},
+            {"inputs": ["1"], "output": "1\n¡Despegue!"},
+            {"inputs": ["5"], "output": "5\n4\n3\n2\n1\n¡Despegue!"}
+          ],
+          "solution": ["n = int(input())", "for i in range(n, 0, -1):", "    print(i)", "print('¡Despegue!')"],
+          "hints": [
+            "Con un for y range() podés contar hacia atrás si el paso es negativo.",
+            "range(n, 0, -1) va de n hasta 1 (el 0 no se incluye). El print final va afuera del bucle, sin sangría.",
+            "for i in range(n, 0, -1): print(i) y después, sin sangría, print('¡Despegue!')."
+          ]
+        },
+        {
+          "id": "w3_l4",
+          "title": "La tabla del aprendiz",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Los aprendices de la torre repiten las tablas en voz alta. Ada quiere un hechizo que las escriba por ellos.",
+          "task": "Leé un número n e imprimí su tabla del 1 al 10, una línea por multiplicación, con el formato: n x i = resultado",
+          "starter": ["n = int(input())", ""],
+          "tests": [
+            {
+              "inputs": ["3"],
+              "output": "3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30"
+            },
+            {
+              "inputs": ["7"],
+              "output": "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35\n7 x 6 = 42\n7 x 7 = 49\n7 x 8 = 56\n7 x 9 = 63\n7 x 10 = 70"
+            },
+            {
+              "inputs": ["12"],
+              "output": "12 x 1 = 12\n12 x 2 = 24\n12 x 3 = 36\n12 x 4 = 48\n12 x 5 = 60\n12 x 6 = 72\n12 x 7 = 84\n12 x 8 = 96\n12 x 9 = 108\n12 x 10 = 120"
+            }
+          ],
+          "require": [{"any": ["for "], "message": "Usá un for: la idea es no escribir diez print a mano."}],
+          "solution": ["n = int(input())", "for i in range(1, 11):", "    print(f'{n} x {i} = {n * i}')"],
+          "hints": [
+            "Un for con range(1, 11) recorre del 1 al 10.",
+            "Adentro del for, i cambia en cada vuelta: armá la línea con un f-string usando n, i y n * i.",
+            "for i in range(1, 11): print(f'{n} x {i} = {n * i}')"
+          ]
+        },
+        {
+          "id": "w3_l5",
+          "title": "Suma de dígitos",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "La puerta de la cima pide la suma de los dígitos de un número. El hechizo tiene que funcionar con números de cualquier largo.",
+          "task": "Leé un entero positivo e imprimí la suma de sus dígitos usando while, // y % (sin convertirlo a texto). Ejemplo: 1234 da 10.",
+          "starter": ["n = int(input())", "suma = 0", "", "print(suma)"],
+          "tests": [
+            {"inputs": ["1234"], "output": "10"},
+            {"inputs": ["9"], "output": "9"},
+            {"inputs": ["1000"], "output": "1"},
+            {"inputs": ["98765"], "output": "35"}
+          ],
+          "require": [
+            {
+              "any": ["while"],
+              "message": "Usá un while: no sabés de antemano cuántos dígitos tiene el número."
+            },
+            {"any": ["% 10", "%10"], "message": "n % 10 te da el último dígito: usalo."}
+          ],
+          "solution": [
+            "n = int(input())",
+            "suma = 0",
+            "while n > 0:",
+            "    suma += n % 10",
+            "    n //= 10",
+            "print(suma)"
+          ],
+          "hints": [
+            "n % 10 es el último dígito (1234 % 10 da 4) y n // 10 le saca ese dígito (1234 // 10 da 123).",
+            "Repetí mientras n sea mayor que 0: sumá el último dígito y después achicá n.",
+            "while n > 0: suma += n % 10 y n //= 10."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w3_mini",
+        "kind": "duelo_de_bugs",
+        "title": "Duelo de Bugs",
+        "rounds": [
+          {
+            "code": ["total = 0", "for i in range(1, 5):", "    total += i", "print(total)"],
+            "output": "15",
+            "fixes": [
+              {"line": 2, "text": "for i in range(0, 5):"},
+              {"line": 2, "text": "for i in range(1, 6):"},
+              {"line": 3, "text": "    total += i + 1"}
+            ]
+          },
+          {
+            "code": ["n = 10", "while n > 0:", "    print(n)", "n -= 3"],
+            "output": "10\n7\n4\n1",
+            "fixes": [
+              {"line": 2, "text": "while n >= 0:"},
+              {"line": 4, "text": "n -= 1"},
+              {"line": 4, "text": "    n -= 3"}
+            ]
+          },
+          {
+            "code": ["for i in range(1, 11):", "    if i % 3 == 0:", "        break", "    print(i, end=' ')"],
+            "output": "1 2 4 5 7 8 10",
+            "fixes": [
+              {"line": 3, "text": "        continue"},
+              {"line": 3, "text": "        pass"},
+              {"line": 2, "text": "    if i % 3 != 0:"}
+            ]
+          },
+          {
+            "code": [
+              "palabra = input()",
+              "vocales = 0",
+              "for letra in palabra:",
+              "    if letra in 'aeiou':",
+              "        vocales += 1",
+              "    print(vocales)"
+            ],
+            "inputs": ["murcielago"],
+            "output": "5",
+            "fixes": [
+              {"line": 2, "text": "vocales = 1"},
+              {"line": 4, "text": "    if letra not in 'aeiou':"},
+              {"line": 6, "text": "print(vocales)"}
+            ]
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w3_boss",
+        "enemy": "ouroboros",
+        "title": "El Ouroboros",
+        "taunt": "El Ouroboros se muerde la cola y repite todo para siempre. Cortá sus bucles para bajarle la vida.",
+        "victory": "El Ouroboros suelta su cola y la torre queda en silencio. Arriba espera la Biblioteca de los Pergaminos.",
+        "rounds": [
+          {
+            "goal": {"value": 9, "type": "int"},
+            "jars": [
+              {"name": "a", "accepts": "int"},
+              {"name": "b", "accepts": "int"},
+              {"name": "c", "accepts": "int"}
+            ],
+            "tokens": [
+              {"value": 1, "type": "int"},
+              {"value": 6, "type": "int"},
+              {"value": 2, "type": "int"},
+              {"value": 0, "type": "int"},
+              {"value": -2, "type": "int"}
+            ],
+            "operators": [],
+            "expression": "sum(range(a, b, c))",
+            "solution_any": [{"a": 1, "b": 6, "c": 2}]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "Conjetura de Collatz: si n es par se divide por 2, si es impar pasa a 3 * n + 1, hasta llegar a 1. El hechizo tiene que imprimir cuántos pasos tarda, pero siempre dice 0. Arreglalo.",
+            "starter": [
+              "n = int(input())",
+              "pasos = 0",
+              "while n != 1:",
+              "    if n % 2 == 0:",
+              "        n = n // 2",
+              "    else:",
+              "        n = 3 * n + 1",
+              "print(pasos)"
+            ],
+            "tests": [
+              {"inputs": ["6"], "output": "8"},
+              {"inputs": ["1"], "output": "0"},
+              {"inputs": ["7"], "output": "16"},
+              {"inputs": ["27"], "output": "111"}
+            ],
+            "solution": [
+              "n = int(input())",
+              "pasos = 0",
+              "while n != 1:",
+              "    if n % 2 == 0:",
+              "        n = n // 2",
+              "    else:",
+              "        n = 3 * n + 1",
+              "    pasos += 1",
+              "print(pasos)"
+            ]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "La puerta da 3 intentos. Leé contraseñas con input() hasta acertar 'abracadabra' o gastar los 3 intentos. Si acierta imprimí Acceso concedido en el intento N; si no, Bloqueado. Apenas acierta, dejá de pedir contraseñas.",
+            "starter": ["clave = 'abracadabra'", "", "# hasta 3 intentos", ""],
+            "tests": [
+              {"inputs": ["hola", "abracadabra"], "output": "Acceso concedido en el intento 2"},
+              {"inputs": ["abracadabra"], "output": "Acceso concedido en el intento 1"},
+              {"inputs": ["a", "b", "c"], "output": "Bloqueado"},
+              {"inputs": ["a", "b", "abracadabra"], "output": "Acceso concedido en el intento 3"}
+            ],
+            "require": [{"any": ["break"], "message": "Usá break para cortar el bucle apenas acierta."}],
+            "solution": [
+              "clave = 'abracadabra'",
+              "acerto = False",
+              "for intento in range(1, 4):",
+              "    if input() == clave:",
+              "        print(f'Acceso concedido en el intento {intento}')",
+              "        acerto = True",
+              "        break",
+              "if not acerto:",
+              "    print('Bloqueado')"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 4,

@@ -38,6 +38,8 @@ var _steps := 0
 ## "break" o "continue" mientras sube hasta el bucle que lo atiende.
 var _flow := ""
 var _loop_depth := 0
+## Lo marca _loop_body cuando un break cortó el bucle (para el else del bucle).
+var _broke := false
 ## Líneas ya parseadas (en un bucle la misma línea se ejecuta muchas veces).
 var _cache: Dictionary = {}
 
@@ -723,6 +725,7 @@ func _loop_body(prog: Array[Dictionary], body_start: int, body_end: int) -> bool
 		return false
 	if _flow == "break":
 		_flow = ""
+		_broke = true
 		return false
 	_flow = ""
 	return _step()
@@ -736,13 +739,30 @@ func _exec_while(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
 	if not _err.is_empty():
 		return end
 	var cond_ast: Variant = _parsed(cond)
+	_broke = false
 	while _err.is_empty():
 		var ok := truthy(_eval(cond_ast))
 		if not _err.is_empty() or not ok:
 			break
 		if not _loop_body(prog, i + 1, body_end):
 			break
-	return body_end
+	return _loop_else(prog, body_end, end, indent)
+
+
+## else de un bucle: corre solo si el bucle terminó sin break. Devuelve la línea siguiente.
+func _loop_else(prog: Array[Dictionary], body_end: int, end: int, indent: int) -> int:
+	var broke := _broke
+	_broke = false
+	if body_end >= end or int(prog[body_end]["indent"]) != indent or not _starts_with_word(prog[body_end]["text"], "else"):
+		return body_end
+	if _header(prog[body_end]["text"], "else") != "" and _err.is_empty():
+		_fail("SyntaxError", "else no lleva condición")
+	var else_end := _block_end(prog, body_end, end, indent)
+	if not _err.is_empty():
+		return end
+	if not broke:
+		_exec_block(prog, body_end + 1, else_end, int(prog[body_end + 1]["indent"]))
+	return else_end
 
 
 func _exec_for(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
@@ -757,6 +777,7 @@ func _exec_for(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
 	var iterable: Variant = _eval(_parsed(parts[1].strip_edges()))
 	if not _err.is_empty():
 		return end
+	_broke = false
 	if type_name(iterable) == "range":
 		var v: int = iterable["start"]
 		var stop: int = iterable["stop"]
@@ -773,7 +794,7 @@ func _exec_for(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
 				break
 	else:
 		_fail("TypeError", "'%s' object is not iterable" % type_name(iterable))
-	return body_end
+	return _loop_else(prog, body_end, end, indent)
 
 
 static func _starts_with_word(text: String, word: String) -> bool:

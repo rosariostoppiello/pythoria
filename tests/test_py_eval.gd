@@ -287,3 +287,11 @@ func test_operador_in() -> void:
 	_ok("-4 in range(0, -10, -2)", true)
 	_err("3 in 'casa'", "TypeError")
 	_err("'a' in 5", "TypeError")
+
+
+func test_else_de_los_bucles() -> void:
+	var code := ["for i in range(1, 4):", "    if input() == 'si':", "        print('en', i)", "        break", "else:", "    print('nunca')"]
+	check_eq(_out(code, ["no", "si"]), "en 2", "con break no corre el else")
+	check_eq(_out(code, ["no", "no", "no"]), "nunca", "sin break corre el else")
+	check_eq(_out(["n = 0", "while n < 2:", "    n += 1", "else:", "    print('listo', n)"]), "listo 2", "while con else")
+	check_eq(_out(["for i in range(2):", "    for j in range(2):", "        break", "    else:", "        print('no')", "else:", "    print('fuera')"]), "fuera", "else de bucles anidados")

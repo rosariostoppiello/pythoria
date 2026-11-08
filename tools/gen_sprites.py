@@ -418,6 +418,27 @@ def crystal_ball() -> Image.Image:
     return img
 
 
+def bug() -> Image.Image:
+    img, d = canvas(24)
+    # antenas
+    d.line([(9, 6), (6, 1)], fill=TINTA)
+    d.line([(14, 6), (17, 1)], fill=TINTA)
+    px(d, [(5, 1), (18, 1)], ROJO)
+    # patas
+    for y in (11, 15, 19):
+        d.line([(4, y - 1), (7, y)], fill=TINTA)
+        d.line([(19, y - 1), (16, y)], fill=TINTA)
+    # cabeza y caparazón rojo con manchas
+    d.ellipse([8, 4, 15, 10], fill=shade(ROJO, 0.6))
+    px(d, [(10, 7), (13, 7)], PERGAMINO)
+    d.ellipse([6, 8, 17, 22], fill=ROJO)
+    d.line([(11, 9), (11, 21)], fill=shade(ROJO, 0.55))
+    for p in [(8, 13), (14, 12), (9, 18), (14, 17)]:
+        d.ellipse([p[0], p[1], p[0] + 1, p[1] + 1], fill=TINTA)
+    px(d, [(8, 10), (9, 10)], shade(ROJO, 1.4))
+    return img
+
+
 # --- Casitas ------------------------------------------------------------------
 
 def house(state: str) -> Image.Image:
@@ -545,6 +566,7 @@ def main() -> None:
         "ouroboros": ouroboros(),
         "guardian_puerta": guardian(),
         "crystal_ball": crystal_ball(),
+        "bug": bug(),
         "jar": jar(),
         "cauldron": cauldron(),
         "grimoire": grimoire(),

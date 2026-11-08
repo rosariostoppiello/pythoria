@@ -83,3 +83,11 @@
 - **Frascos "any"**: en el nivel del hongo sabio los frascos aceptan cualquier tipo (`"accepts": "any"`).
 - **Bola de cristal**: una opción puede ser el nombre de un error (`TypeError`); la respuesta correcta sigue saliendo de ejecutar el código.
 - **Herramienta**: `tools/format_json.py` deja `data/worlds.json` prolijo después de editarlo.
+
+## Mundo 3 (agregado después)
+
+- **Bucles en el evaluador**: `while`, `for` sobre `range()` o un texto, `break`, `continue`, `pass`, `else` en los bucles, `in`/`not in`, `range` con paso, `sum` y `len` de un range. Todavía sin listas ni funciones propias (mundos 4 y 6).
+- **Bucle infinito**: Python se colgaría; el evaluador corta a los 20.000 pasos con el error del juego `BucleInfinito` y aparece el **Ouroboros**. No es un error real de Python y así lo dice el mensaje.
+- **`sum()`** por ahora solo acepta un `range` (no hay listas todavía).
+- **Duelo de Bugs** (`kind: "duelo_de_bugs"`): cada arreglo reemplaza una línea (`{"line", "text"}`); un test verifica que el código con el bug no anda y que exactamente un arreglo lo cura. La sangría se muestra con `·` en los botones.
+- **Mundo 4** queda como "Próximamente" (sin casitas en el JSON).

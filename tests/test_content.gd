@@ -39,17 +39,17 @@ func test_json_carga() -> void:
 	check(ContentDB.load_error == "", "error al cargar: " + ContentDB.load_error)
 	check_eq(ContentDB.world_count(), 8, "8 mundos")
 	check_eq(ContentDB.world_map_nodes().size(), 8, "8 nodos en el mapa")
-	for id in [1, 2]:
+	for id in [1, 2, 3]:
 		var w := ContentDB.get_world(id)
 		check_eq((w["levels"] as Array).size(), 5, "mundo %d tiene 5 niveles" % id)
 		check(w.has("minigame") and w.has("boss_fight"), "mundo %d tiene minijuego y boss" % id)
 
 
 func test_ids_de_casitas_tienen_contenido() -> void:
-	for world in [1, 2]:
+	for world in [1, 2, 3]:
 		for id: String in ContentDB.house_ids(world):
 			check(not ContentDB.get_content(id).is_empty(), "%s no tiene contenido" % id)
-	check(ContentDB.get_content("w3_l1").is_empty(), "w3_l1 es placeholder")
+	check(not ContentDB.world_has_section(4), "el mundo 4 todavía no tiene casitas")
 
 
 func test_niveles_bien_formados() -> void:
@@ -100,7 +100,7 @@ func test_programas_resolubles() -> void:
 
 ## Regla de diseño: en cada mundo jugable, alrededor de la mitad de los desafíos es escribir código.
 func test_mitad_escribir_codigo() -> void:
-	for id in [1, 2]:
+	for id in [1, 2, 3]:
 		var w := ContentDB.get_world(id)
 		var total := 0
 		var code := 0
@@ -234,3 +234,36 @@ func test_bucle_infinito_es_el_ouroboros() -> void:
 	var r := CodeLogic.check(p, "n = int(input())\nwhile n > 0:\n    print(n)\nn -= 1")
 	check_eq(r["creature"], "ouroboros", "bucle infinito")
 	check_eq(r["title"], "¡El Ouroboros!", "título")
+
+
+func test_duelo_de_bugs_resoluble() -> void:
+	var mini := ContentDB.get_content("w3_mini")
+	check_eq(mini["kind"], "duelo_de_bugs", "tipo de minijuego")
+	for r: Dictionary in mini["rounds"]:
+		var buggy := MinigameLogic.run_duel(r, r["code"])
+		check(not (buggy["ok"] and CodeLogic.normalize(buggy["output"]) == CodeLogic.normalize(r["output"])), "el código con bug no debería andar: %s" % [r["code"]])
+		var good := 0
+		for i in (r["fixes"] as Array).size():
+			if MinigameLogic.check_fix(r, i)["status"] == "success":
+				good += 1
+		check_eq(good, 1, "exactamente un arreglo cura %s" % [r["code"]])
+	var rounds: Array = mini["rounds"]
+	check(MinigameLogic.preview(MinigameLogic.run_duel(rounds[1], rounds[1]["code"])).ends_with("se repite para siempre"), "el bug del while es un bucle infinito")
+	check_eq(MinigameLogic.check_fix(rounds[1], 1)["creature"], "ouroboros", "un arreglo que sigue sin terminar trae al Ouroboros")
+
+
+func test_mundo_3_trampas() -> void:
+	var l1 := ContentDB.get_content("w3_l1")
+	check_eq(FrascoLogic.check(l1, {"a": 1, "b": 5}, "")["message"], "Obtuviste 10, pero el caldero pedía 15.", "range no incluye el final")
+	check_eq(FrascoLogic.check(l1, {"a": 1, "b": "6"}, "")["status"], "type_error", "range con texto")
+	var l2 := ContentDB.get_content("w3_l2")
+	check_eq(FrascoLogic.check(l2, {"inicio": 10, "fin": 2, "paso": 0}, "")["detail"], "ValueError: range() arg 3 must not be zero", "paso cero")
+	check_eq(FrascoLogic.check(l2, {"inicio": 10, "fin": 0, "paso": 3}, "")["message"], "Obtuviste 0, pero el caldero pedía 4.", "hacia atrás con paso positivo")
+	var countdown := ContentDB.get_content("w3_l3")
+	var r := CodeLogic.check(countdown, "n = int(input())\nwhile n > 0:\n    print(n)\nprint('¡Despegue!')")
+	check_eq(r["creature"], "ouroboros", "while sin achicar n")
+	var boss: Dictionary = ContentDB.get_content("w3_boss")["rounds"][2]
+	r = CodeLogic.check(boss, "clave = 'abracadabra'\nfor intento in range(1, 4):\n    if input() == clave:\n        print(f'Acceso concedido en el intento {intento}')\n        break\nelse:\n    print('Bloqueado')")
+	check_eq(r["status"], "success", "for/else también vale")
+	r = CodeLogic.check(boss, "clave = 'abracadabra'\nacerto = False\nfor intento in range(1, 4):\n    if input() == clave and not acerto:\n        print(f'Acceso concedido en el intento {intento}')\n        acerto = True\nif not acerto:\n    print('Bloqueado')")
+	check_eq(r["status"], "missing", "sin break el búho lo pide")

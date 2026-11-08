@@ -294,7 +294,7 @@ func test_bola_de_cristal() -> void:
 
 ## Ningún nivel ni ronda de boss puede empujar el botón Lanzar fuera de la pantalla.
 func test_lanzar_siempre_visible() -> void:
-	for world in [1, 2]:
+	for world in [1, 2, 3]:
 		for id: String in ContentDB.house_ids(world):
 			var content := ContentDB.get_content(id)
 			if content.has("kind"):
@@ -313,6 +313,43 @@ func test_lanzar_siempre_visible() -> void:
 				for f in 3:
 					await tree.process_frame
 				var bottom: float = scene._launch.get_global_rect().end.y
-				check(bottom <= 720.0, "%s ronda %d: Lanzar queda en y=%.0f, fuera de la pantalla" % [id, i + 1, bottom])
+				check(bottom <= 712.0, "%s ronda %d: Lanzar queda en y=%.0f, fuera de la pantalla" % [id, i + 1, bottom])
 			scene.queue_free()
 			await tree.process_frame
+
+
+func test_boss_ouroboros() -> void:
+	await _play_boss(3)
+	check_eq(_result().info["message"], ContentDB.get_content("w3_boss")["victory"], "mensaje de victoria")
+
+
+func test_duelo_de_bugs() -> void:
+	GameState.completed.assign(["w1_boss", "w2_boss", "w3_l1", "w3_l2", "w3_l3", "w3_l4", "w3_l5"])
+	await _open("w3_mini", "res://scenes/level/bug_duel.tscn")
+	check(scene._actual_label.text != scene._expected_label.text, "se ve que el hechizo falla")
+	var r: Dictionary = await scene.choose(0)
+	check_eq(r["status"], "wrong", "range(0, 5) no cura el bug")
+	await _retry()
+	var rounds: Array = scene.content["rounds"]
+	for i in rounds.size():
+		check_eq(scene.option_buttons.size(), (rounds[i]["fixes"] as Array).size(), "arreglos de la ronda %d" % (i + 1))
+		var good := -1
+		for f in (rounds[i]["fixes"] as Array).size():
+			if MinigameLogic.check_fix(rounds[i], f)["status"] == "success":
+				good = f
+		r = await scene.choose(good)
+		check_eq(r["status"], "success", "ronda %d" % (i + 1))
+	check(GameState.is_completed("w3_mini"), "minijuego completado")
+	check_eq(GameState.house_state("w3_boss"), "open", "se abre el Ouroboros")
+
+
+func test_duelo_arreglos_visibles() -> void:
+	GameState.completed.assign(["w1_boss", "w2_boss", "w3_l1", "w3_l2", "w3_l3", "w3_l4", "w3_l5"])
+	await _open("w3_mini", "res://scenes/level/bug_duel.tscn")
+	for i in (scene.content["rounds"] as Array).size():
+		scene.round_idx = i
+		scene._load_round()
+		for f in 3:
+			await tree.process_frame
+		var last: Button = scene.option_buttons[-1]
+		check(last.get_global_rect().end.y <= 710.0, "ronda %d: el último arreglo queda en y=%.0f" % [i + 1, last.get_global_rect().end.y])

@@ -48,10 +48,16 @@ func test_estados_visuales() -> void:
 
 
 func test_placeholder_proximamente() -> void:
+	# Ya no hay mundos placeholder con casitas: se vacía el mundo 3 durante el test.
+	var w3 := ContentDB.get_world(3)
+	var saved := {}
+	for k: String in ["levels", "minigame", "boss_fight"]:
+		saved[k] = w3.get(k)
+		w3.erase(k)
 	GameState.completed.append_array(["w1_boss", "w2_boss"])
 	SceneManager.world_id = 3
 	SceneManager.house_id = "w3_l1"
-	check(ContentDB.get_content("w3_l1").is_empty(), "mundo 3 no tiene contenido todavía")
+	check(ContentDB.get_content("w3_l1").is_empty(), "el mundo vaciado no tiene contenido")
 	var scene: Control = load("res://scenes/level/coming_soon.tscn").instantiate()
 	tree.root.add_child(scene)
 	await tree.process_frame
@@ -68,3 +74,5 @@ func test_placeholder_proximamente() -> void:
 	if tree.current_scene:
 		tree.current_scene.queue_free()
 	await tree.process_frame
+	for k: String in saved:
+		w3[k] = saved[k]

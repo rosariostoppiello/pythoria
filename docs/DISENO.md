@@ -150,6 +150,14 @@ Idea a futuro: preguntas y rondas del boss generadas por IA adaptadas al nivel d
 - **Minijuego "Bola de cristal":** se muestra un código y se elige qué va a pasar: qué imprime, o qué error da. 4 rondas con trampas (cortocircuito, orden de textos, `input()` comparado con un número, orden de los `elif`).
 - **Boss Guardián de la Puerta:** Encrucijada de 4 caminos, un programa con `and`/`or`, y arreglar un `if` con tres errores.
 
+## 9c. Mundo 3: Torre de los Rituales
+
+- **Niveles 1 y 2 (Frasco):** `sum(range(a, b))` (el final no se incluye, ficha trampa `'6'`) y `len(range(inicio, fin, paso))` (pasos negativos; un paso 0 es `ValueError`). Hay varias respuestas válidas.
+- **Niveles 3 a 5 (código):** cuenta regresiva con `range(n, 0, -1)`, tabla de multiplicar con `for` y f-strings, y suma de dígitos con `while`, `% 10` y `// 10`.
+- **Minijuego "Duelo de Bugs":** un hechizo con un bug, lo que debería imprimir y lo que imprime de verdad (si es un bucle infinito, "se repite para siempre"). Hay que elegir el arreglo de una línea que lo cura; el correcto sale de ejecutar cada arreglo. Los espacios de sangría se muestran como "·" porque a veces el arreglo es justamente la sangría. 4 rondas: `range` que no incluye el final, un `while` infinito por sangría, `break` contra `continue`, y un `print` adentro del bucle.
+- **Boss Ouroboros:** 3 rondas (Frasco con `sum(range(a, b, c))`, arreglar un contador de pasos de Collatz y una contraseña con 3 intentos y `break`).
+- **Bucles infinitos:** el evaluador corta a los 20.000 pasos y aparece el Ouroboros ("el bucle nunca termina").
+
 ## 10. Progresión y guardado
 
 `user://save.json`:

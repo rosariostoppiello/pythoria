@@ -12,6 +12,7 @@ const SCENES := {
 	"level": "res://scenes/level/level.tscn",
 	"minigame": "res://scenes/level/minigame.tscn",
 	"crystal_ball": "res://scenes/level/crystal_ball.tscn",
+	"bug_duel": "res://scenes/level/bug_duel.tscn",
 	"coming_soon": "res://scenes/level/coming_soon.tscn",
 }
 const PAUSE_SCENE := "res://scenes/pause/pause.tscn"
@@ -100,6 +101,8 @@ func goto_house(id: String) -> void:
 		key = "minigame"
 	elif str(content.get("kind", "")) == "bola_de_cristal":
 		key = "crystal_ball"
+	elif str(content.get("kind", "")) == "duelo_de_bugs":
+		key = "bug_duel"
 	elif str(content.get("mechanic", "")) in ["frasco", "encrucijada", "codigo"]:
 		key = "level"
 	_change(key, State.LEVEL)
