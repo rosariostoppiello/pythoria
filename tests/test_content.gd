@@ -227,3 +227,10 @@ func test_minijuego_errores() -> void:
 	check_eq(MinigameLogic.check(rounds[2], ["%", "//"])["status"], "wrong", "orden de // y %")
 	check_eq(MinigameLogic.check(rounds[3], ["title", "strip"])["status"], "success", "title y strip en cualquier orden")
 	check_eq(MinigameLogic.check(rounds[0], [""])["status"], "incomplete", "hueco vacío")
+
+
+func test_bucle_infinito_es_el_ouroboros() -> void:
+	var p := {"mechanic": "codigo", "tests": [{"inputs": ["3"], "output": "3\n2\n1"}]}
+	var r := CodeLogic.check(p, "n = int(input())\nwhile n > 0:\n    print(n)\nn -= 1")
+	check_eq(r["creature"], "ouroboros", "bucle infinito")
+	check_eq(r["title"], "¡El Ouroboros!", "título")

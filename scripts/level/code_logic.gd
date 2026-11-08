@@ -11,11 +11,13 @@ const CREATURES := {
 	"ValueError": "quimera_tipos",
 	"NameError": "fantasma_sin_nombre",
 	"AttributeError": "fantasma_sin_nombre",
+	"BucleInfinito": "ouroboros",
 }
 const TITLES := {
 	"quimera_tipos": "¡La Quimera Tipos!",
 	"fantasma_sin_nombre": "¡El Fantasma Sin Nombre!",
 	"gremlin_sintaxis": "¡El Gremlin Sintaxis!",
+	"ouroboros": "¡El Ouroboros!",
 }
 const ERROR_TIPS := {
 	"TypeError": "Estás mezclando tipos. Ojo: input() siempre devuelve texto (str).",
@@ -26,6 +28,7 @@ const ERROR_TIPS := {
 	"IndentationError": "Revisá la sangría: lo que va adentro de un if lleva 4 espacios.",
 	"EOFError": "Tu programa pide más input() de los que hay en el caso de prueba.",
 	"ZeroDivisionError": "Dividiste por cero.",
+	"BucleInfinito": "El bucle nunca termina: revisá que algo cambie en cada vuelta para que la condición del while llegue a ser falsa.",
 }
 
 

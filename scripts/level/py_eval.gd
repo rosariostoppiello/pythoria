@@ -5,12 +5,14 @@ extends RefCounted
 ## Soporta: enteros, decimales, textos ('...' y "..."), True/False/None, f-strings
 ## con {expresión} y formato ({x:.2f}, {x:,}, {x:>5}), + - * / // % **,
 ## comparaciones (== != < > <= >=, encadenadas), and/or/not, paréntesis, menos
-## unario, nombres, asignación (x = expr, x += expr, ...), bloques if/elif/else con
-## sangría, métodos de texto (upper, lower, strip, replace, ...) y las funciones
-## print (con sep/end), input, str, int, float, bool, len, round, abs, max y min.
+## unario, nombres, asignación (x = expr, x += expr, ...), bloques if/elif/else,
+## while y for (sobre range() o un texto) con break, continue y pass, el operador in,
+## métodos de texto (upper, lower, strip, replace, ...) y las funciones print (con
+## sep/end), input, str, int, float, bool, len, round, abs, max, min, range y sum.
 ## input() lee de una lista de entradas fija (no imprime el mensaje).
 ## Errores como en Python: TypeError, NameError, SyntaxError, IndentationError,
-## ValueError, ZeroDivisionError, AttributeError, EOFError.
+## ValueError, ZeroDivisionError, AttributeError, EOFError. Además, si un programa
+## da más de MAX_STEPS pasos se corta con "BucleInfinito" (Python se colgaría).
 ##
 ## Resultado de evaluate/run: {ok, value, output, error, message, env}.
 
@@ -18,7 +20,9 @@ const OPS := ["//=", "**", "==", "!=", "<=", ">=", "+=", "-=", "*=", "/=", "%=",
 	"<", ">", "+", "-", "*", "/", "%", "(", ")", "=", ",", "."]
 const COMPARE_OPS := ["==", "!=", "<", ">", "<=", ">="]
 const AUG_OPS := {"+=": "+", "-=": "-", "*=": "*", "/=": "/", "//=": "//", "%=": "%"}
-const BUILTINS := ["print", "input", "str", "int", "float", "bool", "len", "round", "abs", "max", "min"]
+const BUILTINS := ["print", "input", "str", "int", "float", "bool", "len", "round", "abs", "max", "min", "range", "sum"]
+## Pasos máximos (líneas ejecutadas y vueltas de bucle) antes de cortar por bucle infinito.
+const MAX_STEPS := 20000
 const STR_METHODS := ["upper", "lower", "strip", "title", "capitalize", "replace", "count",
 	"startswith", "endswith", "isdigit", "isalpha", "find"]
 
@@ -30,6 +34,12 @@ var inputs: Array = []
 var _err: Dictionary = {}
 var _toks: Array = []
 var _pos := 0
+var _steps := 0
+## "break" o "continue" mientras sube hasta el bucle que lo atiende.
+var _flow := ""
+var _loop_depth := 0
+## Líneas ya parseadas (en un bucle la misma línea se ejecuta muchas veces).
+var _cache: Dictionary = {}
 
 
 ## Evalúa una expresión con las variables de `variables` (nombre -> valor).
@@ -92,6 +102,9 @@ static func type_name(v: Variant) -> String:
 			return "str"
 		TYPE_NIL:
 			return "NoneType"
+		TYPE_DICTIONARY:
+			if v.has("__range__"):
+				return "range"
 	return "object"
 
 
@@ -112,6 +125,11 @@ static func to_str(v: Variant) -> String:
 				return "%d.0" % int(f)
 			# var_to_str da la representación más corta que vuelve al mismo float, como Python.
 			return var_to_str(f)
+		TYPE_DICTIONARY:
+			if v.has("__range__"):
+				if v["step"] == 1:
+					return "range(%d, %d)" % [v["start"], v["stop"]]
+				return "range(%d, %d, %d)" % [v["start"], v["stop"], v["step"]]
 	return str(v)
 
 
@@ -314,8 +332,18 @@ func _parse_compare() -> Variant:
 	var first: Variant = _parse_arith()
 	var ops: Array = []
 	var operands: Array = [first]
-	while _err.is_empty() and _peek()["t"] == "OP" and COMPARE_OPS.has(_peek()["v"]):
-		ops.append(_next()["v"])
+	while _err.is_empty():
+		if _peek()["t"] == "OP" and COMPARE_OPS.has(_peek()["v"]):
+			ops.append(_next()["v"])
+		elif _is_word("in"):
+			_next()
+			ops.append("in")
+		elif _is_word("not") and _toks[mini(_pos + 1, _toks.size() - 1)]["v"] == "in":
+			_next()
+			_next()
+			ops.append("not in")
+		else:
+			break
 		operands.append(_parse_arith())
 	if ops.is_empty():
 		return first
@@ -413,7 +441,7 @@ func _parse_primary() -> Variant:
 			return _parse_fstring(t["v"])
 		"NAME":
 			match t["v"]:
-				"and", "or", "not", "if", "elif", "else":
+				"and", "or", "not", "if", "elif", "else", "in", "while", "for", "break", "continue", "pass":
 					_fail("SyntaxError", "'%s' no puede ir acá" % t["v"])
 					return null
 				"True":
@@ -565,70 +593,187 @@ func format_spec(v: Variant, spec: String) -> String:
 
 # --- Evaluación ----------------------------------------------------------------
 
-## Ejecuta las líneas [start, end) que tienen sangría `indent`, con if/elif/else.
+## Línea parseada una sola vez (en un bucle se ejecuta muchas veces).
+func _parsed(text: String) -> Variant:
+	if _cache.has(text):
+		return _cache[text]
+	var ast: Variant = _parse_line(text)
+	if _err.is_empty():
+		_cache[text] = ast
+	return ast
+
+
+## Cuenta un paso y corta si el programa no termina nunca.
+func _step() -> bool:
+	_steps += 1
+	if _steps > MAX_STEPS:
+		_fail("BucleInfinito", "el hechizo dio más de %d pasos sin terminar: parece un bucle que nunca se corta" % MAX_STEPS)
+		return false
+	return true
+
+
+## Fin del bloque con sangría que empieza después del encabezado `header_idx`.
+func _block_end(prog: Array[Dictionary], header_idx: int, end: int, indent: int) -> int:
+	var body_end := header_idx + 1
+	while body_end < end and int(prog[body_end]["indent"]) > indent:
+		body_end += 1
+	if body_end == header_idx + 1:
+		_fail("IndentationError", "falta el bloque con sangría después de: %s" % prog[header_idx]["text"])
+	return body_end
+
+
+## Texto entre la palabra clave y el ':' final ("while n > 0:" -> "n > 0").
+func _header(text: String, keyword: String) -> String:
+	if not text.ends_with(":"):
+		_fail("SyntaxError", "falta ':' al final de: %s" % text)
+		return ""
+	return text.substr(keyword.length(), text.length() - keyword.length() - 1).strip_edges()
+
+
+## Ejecuta las líneas [start, end) que tienen sangría `indent`: if/elif/else,
+## while, for, break, continue, pass y sentencias simples.
 func _exec_block(prog: Array[Dictionary], start: int, end: int, indent: int) -> void:
 	var i := start
-	while i < end and _err.is_empty():
+	while i < end and _err.is_empty() and _flow == "":
 		var line: Dictionary = prog[i]
 		var text: String = line["text"]
 		if int(line["indent"]) != indent:
 			_fail("IndentationError", "sangría inesperada en: %s" % text)
 			return
+		if not _step():
+			return
 		if _starts_with_word(text, "elif") or _starts_with_word(text, "else"):
 			_fail("SyntaxError", "'%s' sin un if antes" % text.split(" ")[0].trim_suffix(":"))
 			return
+		if text == "break" or text == "continue":
+			if _loop_depth == 0:
+				_fail("SyntaxError", "'%s' fuera de un bucle" % text)
+				return
+			_flow = text
+			return
+		if text == "pass":
+			i += 1
+			continue
+		if _starts_with_word(text, "while"):
+			i = _exec_while(prog, i, end, indent)
+			continue
+		if _starts_with_word(text, "for"):
+			i = _exec_for(prog, i, end, indent)
+			continue
 		if not _starts_with_word(text, "if"):
-			var ast: Variant = _parse_line(text)
+			var ast: Variant = _parsed(text)
 			if _err.is_empty():
 				_exec(ast)
 			i += 1
 			continue
-		# Cadena if / elif / else: se junta cada encabezado con su bloque.
-		var branches: Array[Dictionary] = []
-		var keyword := "if"
-		while true:
-			var header: String = prog[i]["text"]
-			if not header.ends_with(":"):
-				_fail("SyntaxError", "falta ':' al final de: %s" % header)
-				return
-			var cond := header.substr(keyword.length(), header.length() - keyword.length() - 1).strip_edges()
-			if keyword != "else" and cond == "":
-				_fail("SyntaxError", "falta la condición después de '%s'" % keyword)
-				return
-			if keyword == "else" and cond != "":
-				_fail("SyntaxError", "else no lleva condición")
-				return
-			var body_start := i + 1
-			var body_end := body_start
-			while body_end < end and int(prog[body_end]["indent"]) > indent:
-				body_end += 1
-			if body_end == body_start:
-				_fail("IndentationError", "falta el bloque con sangría después de: %s" % header)
-				return
-			branches.append({"cond": cond, "kw": keyword, "start": body_start, "end": body_end})
-			i = body_end
-			if keyword == "else" or i >= end or int(prog[i]["indent"]) != indent:
+		i = _exec_if(prog, i, end, indent)
+
+
+## Cadena if / elif / else. Devuelve el índice de la línea siguiente a la cadena.
+func _exec_if(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
+	var branches: Array[Dictionary] = []
+	var keyword := "if"
+	while true:
+		var header: String = prog[i]["text"]
+		var cond := _header(header, keyword)
+		if not _err.is_empty():
+			return end
+		if keyword != "else" and cond == "":
+			_fail("SyntaxError", "falta la condición después de '%s'" % keyword)
+			return end
+		if keyword == "else" and cond != "":
+			_fail("SyntaxError", "else no lleva condición")
+			return end
+		var body_end := _block_end(prog, i, end, indent)
+		if not _err.is_empty():
+			return end
+		branches.append({"cond": cond, "kw": keyword, "start": i + 1, "end": body_end})
+		i = body_end
+		if keyword == "else" or i >= end or int(prog[i]["indent"]) != indent:
+			break
+		var nxt: String = prog[i]["text"]
+		if _starts_with_word(nxt, "elif"):
+			keyword = "elif"
+		elif _starts_with_word(nxt, "else"):
+			keyword = "else"
+		else:
+			break
+	for b: Dictionary in branches:
+		var take := true
+		if b["kw"] != "else":
+			var cond_ast: Variant = _parsed(b["cond"])
+			if not _err.is_empty():
+				return end
+			take = truthy(_eval(cond_ast))
+			if not _err.is_empty():
+				return end
+		if take:
+			var s: int = b["start"]
+			_exec_block(prog, s, b["end"], int(prog[s]["indent"]))
+			break
+	return i
+
+
+## Corre el cuerpo de un bucle una vez. Devuelve false si hay que dejar de iterar.
+func _loop_body(prog: Array[Dictionary], body_start: int, body_end: int) -> bool:
+	_loop_depth += 1
+	_exec_block(prog, body_start, body_end, int(prog[body_start]["indent"]))
+	_loop_depth -= 1
+	if not _err.is_empty():
+		return false
+	if _flow == "break":
+		_flow = ""
+		return false
+	_flow = ""
+	return _step()
+
+
+func _exec_while(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
+	var cond := _header(prog[i]["text"], "while")
+	if _err.is_empty() and cond == "":
+		_fail("SyntaxError", "falta la condición del while")
+	var body_end := _block_end(prog, i, end, indent)
+	if not _err.is_empty():
+		return end
+	var cond_ast: Variant = _parsed(cond)
+	while _err.is_empty():
+		var ok := truthy(_eval(cond_ast))
+		if not _err.is_empty() or not ok:
+			break
+		if not _loop_body(prog, i + 1, body_end):
+			break
+	return body_end
+
+
+func _exec_for(prog: Array[Dictionary], i: int, end: int, indent: int) -> int:
+	var header := _header(prog[i]["text"], "for")
+	var parts := header.split(" in ", true, 1)
+	if _err.is_empty() and (parts.size() != 2 or not parts[0].strip_edges().is_valid_identifier()):
+		_fail("SyntaxError", "un for se escribe: for nombre in algo:")
+	var body_end := _block_end(prog, i, end, indent)
+	if not _err.is_empty():
+		return end
+	var var_name := parts[0].strip_edges()
+	var iterable: Variant = _eval(_parsed(parts[1].strip_edges()))
+	if not _err.is_empty():
+		return end
+	if type_name(iterable) == "range":
+		var v: int = iterable["start"]
+		var stop: int = iterable["stop"]
+		var step: int = iterable["step"]
+		while (step > 0 and v < stop) or (step < 0 and v > stop):
+			env[var_name] = v
+			if not _loop_body(prog, i + 1, body_end):
 				break
-			var nxt: String = prog[i]["text"]
-			if _starts_with_word(nxt, "elif"):
-				keyword = "elif"
-			elif _starts_with_word(nxt, "else"):
-				keyword = "else"
-			else:
+			v += step
+	elif type_name(iterable) == "str":
+		for ch: String in (iterable as String):
+			env[var_name] = ch
+			if not _loop_body(prog, i + 1, body_end):
 				break
-		for b: Dictionary in branches:
-			var take := true
-			if b["kw"] != "else":
-				var cond_ast: Variant = _parse_line(b["cond"])
-				if not _err.is_empty():
-					return
-				take = truthy(_eval(cond_ast))
-				if not _err.is_empty():
-					return
-			if take:
-				var s: int = b["start"]
-				_exec_block(prog, s, b["end"], int(prog[s]["indent"]))
-				break
+	else:
+		_fail("TypeError", "'%s' object is not iterable" % type_name(iterable))
+	return body_end
 
 
 static func _starts_with_word(text: String, word: String) -> bool:
@@ -762,10 +907,39 @@ func _call(node: Dictionary) -> Variant:
 		"bool":
 			return truthy(args[0]) if args.size() > 0 else false
 		"len":
-			if args.size() != 1 or type_name(args[0]) != "str":
-				_fail("TypeError", "len() necesita un texto" if args.size() == 1 else "len() recibe un argumento")
+			if args.size() != 1 or not type_name(args[0]) in ["str", "range"]:
+				_fail("TypeError", "len() necesita un texto o un range" if args.size() == 1 else "len() recibe un argumento")
 				return null
+			if type_name(args[0]) == "range":
+				return _range_len(args[0])
 			return (args[0] as String).length()
+		"range":
+			if args.is_empty() or args.size() > 3:
+				_fail("TypeError", "range() recibe de 1 a 3 números enteros")
+				return null
+			for a: Variant in args:
+				if typeof(a) not in [TYPE_INT, TYPE_BOOL]:
+					_fail("TypeError", "'%s' object cannot be interpreted as an integer" % type_name(a))
+					return null
+			var nums: Array = args.map(func(a: Variant) -> int: return int(_num(a)))
+			var r := {"__range__": true, "start": 0, "stop": nums[0], "step": 1}
+			if nums.size() >= 2:
+				r["start"] = nums[0]
+				r["stop"] = nums[1]
+			if nums.size() == 3:
+				if nums[2] == 0:
+					_fail("ValueError", "range() arg 3 must not be zero")
+					return null
+				r["step"] = nums[2]
+			return r
+		"sum":
+			if args.size() != 1 or type_name(args[0]) != "range":
+				_fail("TypeError", "sum() necesita un range (las listas llegan en el mundo 4)")
+				return null
+			var rg: Dictionary = args[0]
+			var n := _range_len(rg)
+			# Suma aritmética: n términos desde start con paso step.
+			return n * rg["start"] + rg["step"] * n * (n - 1) / 2
 		"int":
 			if args.size() != 1:
 				return 0
@@ -806,6 +980,15 @@ func _call(node: Dictionary) -> Variant:
 					best = v
 			return best
 	return null
+
+
+static func _range_len(r: Dictionary) -> int:
+	var start: int = r["start"]
+	var stop: int = r["stop"]
+	var step: int = r["step"]
+	if step > 0:
+		return maxi(0, ceili(float(stop - start) / step))
+	return maxi(0, ceili(float(start - stop) / -step))
 
 
 ## round(x) redondea al par más cercano como Python (round(2.5) == 2); round(x, n) da float.
@@ -886,6 +1069,26 @@ func _method(node: Dictionary) -> Variant:
 	return null
 
 
+## `item in container` para textos (subtexto) y range (número dentro del rango).
+func _contains(container: Variant, item: Variant) -> Variant:
+	match type_name(container):
+		"str":
+			if type_name(item) != "str":
+				_fail("TypeError", "'in <string>' requires string as left operand, not %s" % type_name(item))
+				return null
+			return (container as String).contains(item)
+		"range":
+			if not _is_num(item) or float(_num(item)) != floorf(float(_num(item))):
+				return false
+			var x := int(_num(item))
+			var r: Dictionary = container
+			var st: int = r["step"]
+			var inside: bool = (st > 0 and x >= r["start"] and x < r["stop"]) or (st < 0 and x <= r["start"] and x > r["stop"])
+			return inside and (x - int(r["start"])) % st == 0
+	_fail("TypeError", "argument of type '%s' is not iterable" % type_name(container))
+	return null
+
+
 const VERBS := {"+": "sumar", "-": "restar", "*": "multiplicar", "/": "dividir", "//": "dividir", "%": "dividir", "**": "elevar",
 	"<": "comparar", ">": "comparar", "<=": "comparar", ">=": "comparar"}
 
@@ -896,6 +1099,11 @@ func _binary(op: String, a: Variant, b: Variant) -> Variant:
 			return py_equal(a, b)
 		"!=":
 			return not py_equal(a, b)
+		"in", "not in":
+			var found: Variant = _contains(b, a)
+			if not _err.is_empty():
+				return null
+			return found if op == "in" else not found
 	var na := _is_num(a)
 	var nb := _is_num(b)
 	if op in ["<", ">", "<=", ">="]:

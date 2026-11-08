@@ -49,6 +49,8 @@ static func check(round: Dictionary, choices: Array) -> Dictionary:
 			"ValueError": ["type_error", "¡La Quimera Tipos!", "quimera_tipos", "Ese valor no sirve para esa operación o ese formato."],
 			"NameError": ["name_error", "¡El Fantasma Sin Nombre!", "fantasma_sin_nombre", "Usaste un nombre que no existe. ¿Te faltaron comillas?"],
 			"SyntaxError": ["syntax_error", "¡El Gremlin Sintaxis!", "gremlin_sintaxis", "El hechizo está mal escrito."],
+			"IndentationError": ["syntax_error", "¡El Gremlin Sintaxis!", "gremlin_sintaxis", "Revisá la sangría del hechizo."],
+			"BucleInfinito": ["infinite", "¡El Ouroboros!", "ouroboros", "El bucle nunca termina."],
 		}
 		var info: Array = map.get(r["error"], ["error", "¡El hechizo rebotó!", "gremlin_sintaxis", "Algo salió mal."])
 		out["status"] = info[0]

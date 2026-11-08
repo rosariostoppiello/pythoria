@@ -233,3 +233,57 @@ func test_print_sep_end() -> void:
 	check_eq(PyEval.run(["print('a', end='')", "print('b')"])["output"], "ab", "end")
 	check_eq(PyEval.run(["print(1, 2, 3, sep='')"])["output"], "123", "sep vacío")
 	check_eq(PyEval.run(["print('x', color='rojo')"])["error"], "TypeError", "argumento desconocido")
+
+
+func _out(lines: Array, inputs: Array = []) -> String:
+	var r := PyEval.run(lines, {}, inputs)
+	check(r["ok"], "%s dio error: %s" % [lines, r["message"]])
+	return r["output"]
+
+
+func test_for_y_range() -> void:
+	check_eq(_out(["for i in range(3):", "    print(i)"]), "0\n1\n2", "range(3)")
+	check_eq(_out(["for i in range(2, 6, 2):", "    print(i, end=' ')"]), "2 4 ", "range con paso")
+	check_eq(_out(["for i in range(5, 0, -2):", "    print(i, end=' ')"]), "5 3 1 ", "range hacia atrás")
+	check_eq(_out(["for i in range(3, 3):", "    print('nunca')", "print('fin')"]), "fin", "range vacío")
+	check_eq(_out(["for letra in 'hola':", "    print(letra.upper(), end='')"]), "HOLA", "for sobre un texto")
+	check_eq(_out(["total = 0", "for i in range(1, 101):", "    total += i", "print(total)"]), "5050", "suma de 1 a 100")
+	check_eq(_out(["for i in range(1, 4):", "    for j in range(1, 4):", "        print(i * j, end=' ')", "    print()"]), "1 2 3 \n2 4 6 \n3 6 9 ", "bucles anidados")
+	_ok("len(range(0, 10, 3))", 4)
+	_ok("sum(range(1, 6))", 15)
+	_ok("sum(range(10, 0, -3))", 22)
+	_ok("str(range(5))", "range(0, 5)")
+	_err("range(1.5)", "TypeError")
+	_err("range(1, 10, 0)", "ValueError")
+	check_eq(PyEval.run(["for i in 5:", "    print(i)"])["error"], "TypeError", "un int no se recorre")
+
+
+func test_while_break_continue() -> void:
+	check_eq(_out(["n = 10", "while n > 0:", "    print(n, end=' ')", "    n -= 3"]), "10 7 4 1 ", "while")
+	check_eq(_out(["for i in range(1, 11):", "    if i % 3 == 0:", "        continue", "    if i > 7:", "        break", "    print(i, end=' ')"]), "1 2 4 5 7 ", "continue y break")
+	check_eq(_out(["i = 0", "while True:", "    i += 1", "    if i == 4:", "        break", "print(i)"]), "4", "while True con break")
+	check_eq(_out(["for i in range(3):", "    for j in range(3):", "        if j == 1:", "            break", "        print(i, j)"]), "0 0\n1 0\n2 0", "break solo corta el bucle de adentro")
+	check_eq(_out(["x = 0", "if x == 0:", "    pass", "print('ok')"]), "ok", "pass")
+	var code := ["clave = ''", "intentos = 0", "while clave != 'abra':", "    clave = input()", "    intentos += 1", "print(intentos)"]
+	check_eq(_out(code, ["no", "tampoco", "abra"]), "3", "while con input")
+
+
+func test_bucle_infinito_y_errores() -> void:
+	var r := PyEval.run(["n = 5", "while n > 0:", "    print(n)", "n -= 1"])
+	check_eq(r["error"], "BucleInfinito", "n -= 1 sin sangría nunca se ejecuta")
+	r = PyEval.run(["while True:", "    pass"])
+	check_eq(r["error"], "BucleInfinito", "while True sin break")
+	check_eq(PyEval.run(["break"])["error"], "SyntaxError", "break fuera de un bucle")
+	check_eq(PyEval.run(["while x > 0", "    x -= 1"])["error"], "SyntaxError", "falta ':'")
+	check_eq(PyEval.run(["for i in range(3):", "print(i)"])["error"], "IndentationError", "cuerpo sin sangría")
+	check_eq(PyEval.run(["for 3 in range(3):", "    print(3)"])["error"], "SyntaxError", "for sin nombre")
+
+
+func test_operador_in() -> void:
+	_ok("'a' in 'casa'", true)
+	_ok("'z' not in 'casa'", true)
+	_ok("3 in range(0, 10, 3)", true)
+	_ok("4 in range(0, 10, 3)", false)
+	_ok("-4 in range(0, -10, -2)", true)
+	_err("3 in 'casa'", "TypeError")
+	_err("'a' in 5", "TypeError")
