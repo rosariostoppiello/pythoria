@@ -84,3 +84,21 @@ func test_teclas_registradas() -> void:
 	var space := InputEventKey.new()
 	space.physical_keycode = KEY_SPACE
 	check(InputMap.event_is_action(space, "interact"), "Espacio interactúa")
+
+
+## Desde cualquier actividad se puede volver al mapa con el botón de arriba.
+func test_volver_al_mapa_desde_cada_actividad() -> void:
+	GameState.set_reviewer(true)
+	for house: String in ["w1_l1", "w1_l3", "w1_mini", "w1_boss", "w2_mini", "w3_mini"]:
+		SceneManager.goto_house(house)
+		await _settle()
+		var back := tree.current_scene.find_child("VolverMapa", true, false) as Button
+		check(back != null, "%s tiene el botón ‹ Mapa" % house)
+		if back == null:
+			continue
+		check(back.get_global_rect().position.y < 60, "%s: el botón está en la barra de arriba" % house)
+		back.pressed.emit()
+		await _settle()
+		check_eq(_scene_file(), SceneManager.SCENES["section_map"], "%s vuelve al mapa de sección" % house)
+		check_eq(SceneManager.world_id, ContentDB.world_of(house), "%s vuelve a su mundo" % house)
+	GameState.set_reviewer(false)

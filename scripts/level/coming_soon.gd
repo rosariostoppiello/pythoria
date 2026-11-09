@@ -7,7 +7,7 @@ func _ready() -> void:
 	UI.background(self)
 	var house_id := SceneManager.house_id
 	var world := ContentDB.get_world(SceneManager.world_id)
-	add_child(TopBar.new("Mundo %d · %s" % [SceneManager.world_id, ContentDB.house_label(house_id)]))
+	add_child(TopBar.for_activity("Mundo %d · %s" % [SceneManager.world_id, ContentDB.house_label(house_id)]))
 	var center := CenterContainer.new()
 	add_child(UI.full_rect(center))
 	var panel := UI.panel()

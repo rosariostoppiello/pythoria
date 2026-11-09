@@ -18,7 +18,7 @@ func _ready() -> void:
 	house_id = SceneManager.house_id
 	content = ContentDB.get_content(house_id)
 	UI.background(self)
-	add_child(TopBar.new("Mundo %d · %s" % [ContentDB.world_of(house_id), content.get("title", "Minijuego")]))
+	add_child(TopBar.for_activity("Mundo %d · %s" % [ContentDB.world_of(house_id), content.get("title", "Minijuego")]))
 
 	var main := UI.hbox(16)
 	main.position = Vector2(16, 70)

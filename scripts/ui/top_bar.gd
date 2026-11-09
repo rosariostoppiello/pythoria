@@ -61,6 +61,16 @@ func refresh() -> void:
 	streak_label.text = "Racha: %d %s" % [days, "día" if days == 1 else "días"]
 
 
+## Barra de una actividad (nivel, boss, minijuego) con el botón para volver al mapa.
+static func for_activity(title: String) -> TopBar:
+	var bar := TopBar.new(title)
+	var back := bar.add_left_button("‹ Mapa")
+	back.name = "VolverMapa"
+	back.tooltip_text = "Volver al mapa del mundo (también con Esc → Volver al mapa)"
+	back.pressed.connect(SceneManager.back_to_section)
+	return bar
+
+
 ## Botón a la izquierda del título. No toma foco para no robar Espacio/Enter.
 func add_left_button(text: String) -> Button:
 	var b := UI.button(text, "OutlineButton")

@@ -32,7 +32,7 @@ func _ready() -> void:
 	is_boss = content.has("rounds")
 	UI.background(self)
 	var world_id := ContentDB.world_of(house_id)
-	add_child(TopBar.new("Mundo %d · %s" % [world_id, ContentDB.house_label(house_id)]))
+	add_child(TopBar.for_activity("Mundo %d · %s" % [world_id, ContentDB.house_label(house_id)]))
 
 	var main := UI.hbox(16)
 	main.position = Vector2(16, 70)
