@@ -9,11 +9,13 @@ cd "$(dirname "$0")/.."
 GODOT="${GODOT:-godot}"
 rm -rf build/web && mkdir -p build/web
 "$GODOT" --headless --path . --export-release "Web" build/web/index.html
-# Sin threads no hacen falta cabeceras especiales; solo cache razonable para el .wasm y el .pck.
+# Sin threads no hacen falta cabeceras especiales. Los archivos se llaman igual en cada
+# publicación (index.pck, index.wasm...), así que el navegador tiene que revisar siempre si
+# hay una versión nueva; con el etag, si no cambió, no la vuelve a descargar.
 cat > build/web/vercel.json <<'JSON'
 {
   "headers": [
-    {"source": "/(.*)\\.(wasm|pck)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]}
+    {"source": "/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=0, must-revalidate"}]}
   ]
 }
 JSON
