@@ -8,6 +8,7 @@ var xp_bar: ProgressBar
 var xp_label: Label
 var streak_label: Label
 var row: HBoxContainer
+var _reviewer_badge: Label
 
 
 func _init(title: String = "") -> void:
@@ -19,6 +20,11 @@ func _init(title: String = "") -> void:
 	title_label = UI.label(title, "HeaderLabel")
 	title_label.add_theme_font_size_override("font_size", 26)
 	row.add_child(title_label)
+	_reviewer_badge = UI.label("Modo revisor", "MutedLabel")
+	_reviewer_badge.add_theme_color_override("font_color", ThemeColors.TURQUESA)
+	_reviewer_badge.tooltip_text = "Todos los mundos y casitas están abiertos para revisar. El progreso no cambia."
+	_reviewer_badge.mouse_filter = Control.MOUSE_FILTER_PASS
+	row.add_child(_reviewer_badge)
 	row.add_child(UI.spacer(false))
 	level_label = UI.label("", "RewardLabel")
 	level_label.add_theme_font_size_override("font_size", 22)
@@ -47,6 +53,7 @@ func set_title(t: String) -> void:
 
 
 func refresh() -> void:
+	_reviewer_badge.visible = GameState.reviewer
 	level_label.text = "Nv %d" % GameState.player_level()
 	xp_bar.value = GameState.level_progress()
 	xp_label.text = "%d XP" % GameState.xp

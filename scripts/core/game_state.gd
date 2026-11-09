@@ -11,10 +11,36 @@ var last_played_day: String = ""
 var completed: Array[String] = []
 var hints_used: Dictionary = {}
 var current_world: int = 1
+## Modo revisor: abre todos los mundos con contenido y todas sus casitas para revisar
+## el juego sin jugarlo en orden. No cambia el progreso guardado.
+var reviewer := false
 
 
 func _ready() -> void:
 	load_from_save()
+	reviewer = reviewer_requested()
+
+
+func set_reviewer(on: bool) -> void:
+	reviewer = on
+	changed.emit()
+
+
+## Se activa con ?revisor=1 en la URL (web) o con -- --revisor al lanzar Godot.
+static func reviewer_requested() -> bool:
+	if OS.has_feature("web"):
+		var query: Variant = JavaScriptBridge.eval("window.location.search", true)
+		return query_wants_reviewer(str(query) if query != null else "")
+	return OS.get_cmdline_user_args().has("--revisor")
+
+
+## "?revisor=1", "?revisor" o "?x=2&revisor=si" activan el modo; "?revisor=0" no.
+static func query_wants_reviewer(query: String) -> bool:
+	for part: String in query.trim_prefix("?").split("&", false):
+		var kv := part.split("=", true, 1)
+		if kv[0] == "revisor":
+			return kv.size() == 1 or not kv[1] in ["0", "no", "false"]
+	return false
 
 
 func reset() -> void:
@@ -84,6 +110,13 @@ func is_completed(house_id: String) -> bool:
 
 
 func is_world_unlocked(world_id: int) -> bool:
+	if reviewer and ContentDB.world_has_section(world_id):
+		return true
+	return _world_reached(world_id)
+
+
+## Desbloqueado por progreso real (sin el modo revisor).
+func _world_reached(world_id: int) -> bool:
 	if world_id <= 1:
 		return true
 	return is_completed("w%d_boss" % (world_id - 1))
@@ -98,6 +131,8 @@ func is_house_unlocked(house_id: String) -> bool:
 	var world_id := ContentDB.world_of(house_id)
 	if world_id < 0 or not is_world_unlocked(world_id):
 		return false
+	if reviewer:
+		return true
 	var ids := ContentDB.house_ids(world_id)
 	var idx := ids.find(house_id)
 	if ContentDB.house_kind(house_id) == "boss":
@@ -115,12 +150,13 @@ func house_state(house_id: String) -> String:
 	return "open" if is_house_unlocked(house_id) else "locked"
 
 
-## Último mundo desbloqueado que tiene mapa de sección (donde se para el aprendiz).
+## Último mundo alcanzado que tiene mapa de sección (donde se para el aprendiz).
+## Usa el progreso real: el modo revisor no mueve al aprendiz.
 func frontier_world() -> int:
 	var best := 1
 	for w: Dictionary in ContentDB.worlds():
 		var id := int(w["id"])
-		if is_world_unlocked(id) and ContentDB.world_has_section(id):
+		if _world_reached(id) and ContentDB.world_has_section(id):
 			best = maxi(best, id)
 	return best
 

@@ -104,6 +104,15 @@ func _show_options() -> void:
 	slider.custom_minimum_size = Vector2(320, 24)
 	slider.value_changed.connect(func(v: float) -> void: AudioServer.set_bus_volume_db(0, linear_to_db(v)))
 	box.add_child(slider)
+	var reviewer := CheckButton.new()
+	reviewer.name = "ModoRevisor"
+	reviewer.text = "Modo revisor: abre todos los mundos y casitas"
+	reviewer.button_pressed = GameState.reviewer
+	reviewer.toggled.connect(GameState.set_reviewer)
+	box.add_child(reviewer)
+	var note := UI.label("Para revisar el contenido sin jugar en orden. No cambia tu progreso.\nEn la web también se activa con ?revisor=1 al final de la dirección.", "MutedLabel")
+	note.add_theme_font_size_override("font_size", 15)
+	box.add_child(note)
 	var close := UI.button("Cerrar")
 	close.pressed.connect(_close_modal)
 	box.add_child(close)
