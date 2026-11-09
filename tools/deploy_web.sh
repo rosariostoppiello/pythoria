@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # Exporta la versión web y la publica en Vercel (proyecto "pythoria").
-# Requiere: plantillas web de Godot 4.7 instaladas y `vercel login` hecho una vez.
+# Local: requiere las plantillas web de Godot 4.7 y `vercel login` hecho una vez.
+# CI: usa VERCEL_TOKEN, VERCEL_ORG_ID y VERCEL_PROJECT_ID (secretos del repo).
 # Uso: tools/deploy_web.sh            -> producción
 #      tools/deploy_web.sh --preview  -> URL de prueba, sin tocar producción
 set -euo pipefail
 cd "$(dirname "$0")/.."
+GODOT="${GODOT:-godot}"
 rm -rf build/web && mkdir -p build/web
-godot --headless --path . --export-release "Web" build/web/index.html
+"$GODOT" --headless --path . --export-release "Web" build/web/index.html
 # Sin threads no hacen falta cabeceras especiales; solo cache razonable para el .wasm y el .pck.
 cat > build/web/vercel.json <<'JSON'
 {
@@ -15,8 +17,14 @@ cat > build/web/vercel.json <<'JSON'
   ]
 }
 JSON
-if [ "${1:-}" = "--preview" ]; then
-  vercel deploy build/web --yes --project pythoria --create-if-missing
-else
-  vercel deploy build/web --prod --yes --project pythoria --create-if-missing
+args=(deploy build/web --yes)
+if [ "${1:-}" != "--preview" ]; then
+  args+=(--prod)
 fi
+if [ -n "${VERCEL_TOKEN:-}" ]; then
+  # En el CI el proyecto sale de VERCEL_ORG_ID y VERCEL_PROJECT_ID.
+  args+=(--token "$VERCEL_TOKEN")
+else
+  args+=(--project pythoria --create-if-missing)
+fi
+vercel "${args[@]}"

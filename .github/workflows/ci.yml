@@ -1,0 +1,86 @@
+# Tests en cada push y PR. En main, si pasan, exporta la versión web y la publica en Vercel.
+# Secretos necesarios (Settings → Secrets and variables → Actions):
+#   VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GODOT_VERSION: "4.7.2"
+  GODOT: /home/runner/godot/godot
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Caché de Godot
+        uses: actions/cache@v4
+        with:
+          path: ~/godot
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Instalar Godot
+        run: tools/ci/install_godot.sh
+
+      - name: Import y tests
+        run: tools/check.sh
+
+  deploy:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+      VERCEL_ORG_ID: ${{ secrets.VERCEL_ORG_ID }}
+      VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Revisar secretos de Vercel
+        id: secrets
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$VERCEL_ORG_ID" ] || [ -z "$VERCEL_PROJECT_ID" ]; then
+            echo "::warning::No se publica: faltan los secretos VERCEL_TOKEN, VERCEL_ORG_ID o VERCEL_PROJECT_ID"
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Caché de Godot y plantillas web
+        if: steps.secrets.outputs.ready == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/godot
+            ~/.local/share/godot/export_templates
+          key: godot-web-${{ env.GODOT_VERSION }}
+
+      - name: Instalar Godot y plantillas web
+        if: steps.secrets.outputs.ready == 'true'
+        run: tools/ci/install_godot.sh --web-templates
+
+      - name: Instalar Vercel CLI
+        if: steps.secrets.outputs.ready == 'true'
+        run: npm install -g vercel@65.12.1
+
+      - name: Importar proyecto
+        if: steps.secrets.outputs.ready == 'true'
+        run: |
+          $GODOT --headless --path . --import >/dev/null 2>&1 || true
+          $GODOT --headless --path . --import
+
+      - name: Exportar y publicar
+        if: steps.secrets.outputs.ready == 'true'
+        run: tools/deploy_web.sh

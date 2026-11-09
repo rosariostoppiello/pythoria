@@ -1,6 +1,6 @@
 # Prueba manual
 
-Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 95 tests).
+Pasos para probar cada pantalla a mano. Todo lo automático se corre con `tools/check.sh` (import + 99 tests). También corre solo en GitHub Actions en cada push.
 
 ## 0. Abrir el proyecto
 
@@ -143,7 +143,11 @@ Se abre al vencer al Guardián. Para llegar rápido, agregá `"w2_boss"` (y `"w1
 
 **Publicada en Vercel:** <https://pythoria-eta.vercel.app> (pública, sin login). El progreso queda guardado en el navegador de quien juega (IndexedDB), así que cada persona arranca de cero.
 
-Para volver a publicar después de cambios:
+**Modo revisor:** <https://pythoria-eta.vercel.app/?revisor=1> abre todos los mundos con contenido y todas sus casitas, para revisar sin jugar en orden. La barra de arriba dice "Modo revisor". No cambia el progreso guardado. En el juego de escritorio se activa en **Opciones** o lanzando Godot con `-- --revisor`.
+
+**Publicación automática:** cada push a `main` corre los tests en GitHub Actions y, si pasan, publica en la misma URL (ver `.github/workflows/ci.yml`). Necesita los secretos de Vercel cargados en GitHub.
+
+Para publicar a mano:
 
 ```bash
 tools/deploy_web.sh            # exporta y publica en producción (misma URL)

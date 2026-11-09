@@ -97,4 +97,7 @@
 - **URL**: https://pythoria-eta.vercel.app (proyecto `pythoria` en la cuenta de Vercel de Rosario). Es pública.
 - **Cómo se publica**: `tools/deploy_web.sh` exporta la versión web y sube `build/web/` con la CLI de Vercel (`vercel deploy --prod`). Vercel no compila Godot, así que no está conectado al repo de GitHub: después de cambiar algo hay que correr el script (o `--preview` para una URL de prueba).
 - **Build release**: el botón "Completar (debug)" no aparece en la web, y el progreso de cada jugador vive en su navegador.
-- **Pendiente posible**: si el líder quiere revisar los mundos 2 y 3 sin jugar los anteriores, haría falta un "modo revisor" (por ejemplo `?revisor=1` en la URL) que desbloquee todo.
+- **Modo revisor** (hecho): `?revisor=1` en la URL, el interruptor de Opciones o `-- --revisor`. Abre todos los mundos que tienen casitas y todas sus casitas, sin guardar nada ni mover al aprendiz. Completar casitas en ese modo sí suma XP y progreso real, como jugando normal.
+- **CI** (`.github/workflows/ci.yml`): en cada push y PR instala Godot 4.7.2 para Linux y corre `tools/check.sh`. En `main`, si los tests pasan, descarga las plantillas web (~1.2 GB la primera vez, después quedan en la caché de Actions), exporta y publica con `tools/deploy_web.sh` usando los secretos `VERCEL_TOKEN`, `VERCEL_ORG_ID` y `VERCEL_PROJECT_ID`. Sin secretos, el paso de publicación se saltea con un aviso.
+- **El proyecto de Vercel no está conectado al repo** a propósito: Vercel no puede compilar Godot, así que si se conecta, cada push dispararía un build que falla. Publica GitHub Actions.
+- **Clon limpio**: la primera importación de Godot tira errores falsos (carga el tema antes que las fuentes); `tools/check.sh` hace una pasada previa cuando no existe `.godot/`.
