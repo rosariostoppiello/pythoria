@@ -49,7 +49,7 @@ Para empezar de cero en cualquier momento: en el menú, **Jugar** → **Sí, emp
 
 La dificultad apunta a primer año de facultad. Cada mundo mezcla desafíos de **arrastrar** (Frasco, Encrucijada) con desafíos de **escribir código** (más o menos la mitad).
 
-**Salir de una actividad**: en cualquier nivel, boss o minijuego, el botón **‹ Mapa** de arriba a la izquierda vuelve al mapa del mundo, frente a la casita. También se puede con **Esc** → **Volver al mapa**.
+**Salir de una actividad**: en cualquier nivel, boss o minijuego, el botón **‹ Volver al mapa** de arriba a la izquierda vuelve al mapa del mundo, frente a la casita. También se puede con **Esc** → **Volver al mapa**.
 
 ### Frasco (arrastrar fichas)
 

@@ -64,7 +64,7 @@ func refresh() -> void:
 ## Barra de una actividad (nivel, boss, minijuego) con el botón para volver al mapa.
 static func for_activity(title: String) -> TopBar:
 	var bar := TopBar.new(title)
-	var back := bar.add_left_button("‹ Mapa")
+	var back := bar.add_left_button("‹ Volver al mapa")
 	back.name = "VolverMapa"
 	back.tooltip_text = "Volver al mapa del mundo (también con Esc → Volver al mapa)"
 	back.pressed.connect(SceneManager.back_to_section)
