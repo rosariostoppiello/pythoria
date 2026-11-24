@@ -846,46 +846,1637 @@
       "id": 4,
       "name": "Biblioteca de los Pergaminos",
       "color": "#8A3F7A",
-      "status": "designed",
+      "status": "playable",
       "topics": ["strings", "listas", "tuplas", "slicing"],
+      "story": "Una biblioteca infinita donde los pergaminos se guardan en estantes numerados desde el cero. El Espectro del Índice esconde los libros en posiciones que no existen.",
       "boss": "espectro_indice",
-      "levels": []
+      "section_map": {
+        "player_start": [2, 5],
+        "houses": [
+          {"id": "w4_l1", "kind": "level", "pos": [4, 3]},
+          {"id": "w4_l2", "kind": "level", "pos": [7, 6]},
+          {"id": "w4_l3", "kind": "level", "pos": [10, 3]},
+          {"id": "w4_l4", "kind": "level", "pos": [13, 7]},
+          {"id": "w4_l5", "kind": "level", "pos": [16, 4]},
+          {"id": "w4_mini", "kind": "minigame", "pos": [19, 7]},
+          {"id": "w4_boss", "kind": "boss", "pos": [22, 3]}
+        ]
+      },
+      "levels": [
+        {
+          "id": "w4_l1",
+          "title": "El pergamino cortado",
+          "mechanic": "frasco",
+          "story": "El pergamino dice 'pergamino', pero el caldero pide solo 'amino'. Cortalo con [inicio:fin]: el inicio se incluye y el fin no. Las posiciones empiezan en 0, y con negativos se cuentan desde el final.",
+          "given": ["palabra = 'pergamino'"],
+          "goal": {"value": "amino", "type": "str"},
+          "jars": [{"name": "inicio", "accepts": "int"}, {"name": "fin", "accepts": "int"}],
+          "tokens": [
+            {"value": 4, "type": "int"},
+            {"value": 9, "type": "int"},
+            {"value": -5, "type": "int"},
+            {"value": 8, "type": "int"},
+            {"value": "4", "type": "str"},
+            {"value": 5, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "palabra[inicio:fin]",
+          "solution_any": [{"inicio": 4, "fin": 9}, {"inicio": -5, "fin": 9}],
+          "hints": [
+            "palabra[a:b] toma desde la posición a hasta la b - 1. La p es la posición 0.",
+            "Contá: p=0, e=1, r=2, g=3, a=4. 'pergamino' tiene 9 letras, así que la última es la 8.",
+            "palabra[4:9] da 'amino'. Con negativos, palabra[-5:9] también: -5 es la quinta letra desde el final."
+          ]
+        },
+        {
+          "id": "w4_l2",
+          "title": "Saltos hacia atrás",
+          "mechanic": "frasco",
+          "story": "Los tomos del estante están en orden, pero el caldero los pide del último hacia atrás y de a dos: [50, 30]. Con un paso negativo, el slicing recorre la lista al revés.",
+          "given": ["tomos = [10, 20, 30, 40, 50]"],
+          "goal": {"value": "[50, 30]", "type": "expr"},
+          "jars": [
+            {"name": "inicio", "accepts": "int"},
+            {"name": "fin", "accepts": "int"},
+            {"name": "paso", "accepts": "int"}
+          ],
+          "tokens": [
+            {"value": 4, "type": "int"},
+            {"value": -1, "type": "int"},
+            {"value": 1, "type": "int"},
+            {"value": 0, "type": "int"},
+            {"value": -2, "type": "int"},
+            {"value": 2, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "tomos[inicio:fin:paso]",
+          "solution_any": [
+            {"inicio": 4, "fin": 1, "paso": -2},
+            {"inicio": 4, "fin": 0, "paso": -2},
+            {"inicio": -1, "fin": 1, "paso": -2},
+            {"inicio": -1, "fin": 0, "paso": -2}
+          ],
+          "hints": [
+            "Con paso negativo el slicing va de derecha a izquierda: el inicio tiene que estar más a la derecha que el fin.",
+            "50 está en la posición 4 (o -1). De a dos hacia atrás: 4, 2... y hay que frenar antes de llegar al 10.",
+            "tomos[4:1:-2] o tomos[-1:0:-2] dan [50, 30]."
+          ]
+        },
+        {
+          "id": "w4_l3",
+          "title": "El inventario de la estantería",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Ada anota cuántas páginas tiene cada pergamino. Quiere saber cuántos hay, el total de páginas y cuál es el más largo, sin contar a mano.",
+          "task": "Leé una línea con números separados por espacios (las páginas de cada pergamino). Imprimí en tres líneas: cuántos pergaminos hay, el total de páginas y el pergamino más largo. Con 120 45 300 imprime 3, 465 y 300.",
+          "starter": ["texto = input()", "paginas = []", "", "# convertí cada parte en int y agregala a la lista", ""],
+          "tests": [
+            {"inputs": ["120 45 300"], "output": "3\n465\n300"},
+            {"inputs": ["7"], "output": "1\n7\n7"},
+            {"inputs": ["10 10 5 80 3"], "output": "5\n108\n80"},
+            {"inputs": ["1000 999"], "output": "2\n1999\n1000"}
+          ],
+          "require": [{"any": ["split"], "message": "Usá split() para separar la línea en partes."}],
+          "solution": [
+            "texto = input()",
+            "paginas = []",
+            "for p in texto.split():",
+            "    paginas.append(int(p))",
+            "print(len(paginas))",
+            "print(sum(paginas))",
+            "print(max(paginas))"
+          ],
+          "hints": [
+            "texto.split() separa la línea en una lista de textos: '120 45 300' da ['120', '45', '300'].",
+            "Recorré esa lista con un for, convertí cada parte con int() y agregala a paginas con append().",
+            "len(paginas), sum(paginas) y max(paginas) dan las tres respuestas."
+          ]
+        },
+        {
+          "id": "w4_l4",
+          "title": "El palíndromo del espejo",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "En la puerta de la sala de lectura hay frases que se leen igual al derecho y al revés. Solo esas abren la puerta.",
+          "task": "Leé una frase e imprimí Es palíndromo si se lee igual al revés (sin importar mayúsculas ni espacios) o No es palíndromo si no. 'Anita lava la tina' es palíndromo.",
+          "starter": ["frase = input()", ""],
+          "tests": [
+            {"inputs": ["Anita lava la tina"], "output": "Es palíndromo"},
+            {"inputs": ["Hola mundo"], "output": "No es palíndromo"},
+            {"inputs": ["Neuquen"], "output": "Es palíndromo"},
+            {"inputs": ["Ab ba"], "output": "Es palíndromo"},
+            {"inputs": ["abca"], "output": "No es palíndromo"}
+          ],
+          "require": [{"any": ["[::-1]"], "message": "Usá el slicing [::-1] para dar vuelta el texto."}],
+          "solution": [
+            "frase = input()",
+            "limpia = frase.lower().replace(' ', '')",
+            "if limpia == limpia[::-1]:",
+            "    print('Es palíndromo')",
+            "else:",
+            "    print('No es palíndromo')"
+          ],
+          "hints": [
+            "texto[::-1] da el texto al revés: 'hola'[::-1] es 'aloh'.",
+            "Antes de comparar pasá todo a minúsculas con lower() y sacá los espacios con replace(' ', '').",
+            "limpia = frase.lower().replace(' ', '') y después comparás limpia == limpia[::-1]."
+          ]
+        },
+        {
+          "id": "w4_l5",
+          "title": "El pergamino más antiguo",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Cada pergamino tiene título y año. El Espectro desordenó el catálogo y Ada necesita encontrar el más antiguo.",
+          "task": "Leé un número n y después n líneas con el formato título,año. Guardá cada pergamino como una tupla (título, año) en una lista e imprimí el más antiguo con el formato Más antiguo: título (año). Si hay empate, gana el que apareció primero.",
+          "starter": ["n = int(input())", "catalogo = []", "for i in range(n):", "    linea = input()", "", ""],
+          "tests": [
+            {
+              "inputs": ["3", "Runas básicas,1450", "Pociones,1210", "Astronomía,1630"],
+              "output": "Más antiguo: Pociones (1210)"
+            },
+            {"inputs": ["1", "Único,2000"], "output": "Más antiguo: Único (2000)"},
+            {"inputs": ["4", "A,1500", "B,1400", "C,1400", "D,1600"], "output": "Más antiguo: B (1400)"},
+            {
+              "inputs": ["2", "Hechizos de agua,987", "Hechizos de fuego,1987"],
+              "output": "Más antiguo: Hechizos de agua (987)"
+            }
+          ],
+          "require": [{"any": ["append"], "message": "Guardá cada pergamino en la lista con append()."}],
+          "solution": [
+            "n = int(input())",
+            "catalogo = []",
+            "for i in range(n):",
+            "    linea = input()",
+            "    titulo, anio = linea.split(',')",
+            "    catalogo.append((titulo, int(anio)))",
+            "viejo = catalogo[0]",
+            "for p in catalogo:",
+            "    if p[1] < viejo[1]:",
+            "        viejo = p",
+            "titulo, anio = viejo",
+            "print(f'Más antiguo: {titulo} ({anio})')"
+          ],
+          "hints": [
+            "linea.split(',') separa título y año. Podés desarmarlo así: titulo, anio = linea.split(',').",
+            "Guardá (titulo, int(anio)) en la lista. Después recorrela recordando el más antiguo: si uno tiene un año menor, pasa a ser el más antiguo.",
+            "Usá < y no <=: así, si hay empate, se queda el primero."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w4_mini",
+        "kind": "ordena_el_conjuro",
+        "title": "Ordena el conjuro",
+        "rounds": [
+          {
+            "lines": [
+              "libros = ['runas', 'pociones']",
+              "libros.append('astros')",
+              "libros.insert(0, 'mapas')",
+              "print(libros)"
+            ],
+            "output": "['mapas', 'runas', 'pociones', 'astros']"
+          },
+          {
+            "lines": ["total = 0", "for n in [4, 8, 15]:", "    total += n", "print(total)"],
+            "extra": ["    print(total)"],
+            "output": "27"
+          },
+          {
+            "lines": [
+              "palabra = 'biblioteca'",
+              "inicio = palabra[:3]",
+              "final = palabra[-3:]",
+              "print(inicio + final)"
+            ],
+            "output": "bibeca"
+          },
+          {
+            "lines": [
+              "estante = [('Runas', 3), ('Mapas', 1)]",
+              "for titulo, copias in estante:",
+              "    if copias > 1:",
+              "        print(titulo, copias)"
+            ],
+            "extra": ["print(titulo, copias)"],
+            "output": "Runas 3"
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w4_boss",
+        "enemy": "espectro_indice",
+        "title": "El Espectro del Índice",
+        "taunt": "El Espectro del Índice esconde los libros en posiciones que no existen. Encontrá cada uno para bajarle la vida.",
+        "victory": "El Espectro se deshace en polvo de pergamino y los estantes vuelven a su lugar. Más allá se escucha el zumbido del Salón de las Runas.",
+        "rounds": [
+          {
+            "mechanic": "frasco",
+            "given": ["estante = ['runas', 'mapas', 'pociones', 'astros']"],
+            "goal": {"value": "poci", "type": "str"},
+            "jars": [{"name": "a", "accepts": "int"}, {"name": "b", "accepts": "int"}],
+            "tokens": [
+              {"value": 2, "type": "int"},
+              {"value": 4, "type": "int"},
+              {"value": -4, "type": "int"},
+              {"value": 3, "type": "int"},
+              {"value": "2", "type": "str"}
+            ],
+            "operators": [],
+            "expression": "estante[a][:b]",
+            "solution_any": [{"a": 2, "b": 4}, {"a": 2, "b": -4}]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "El Espectro rompió este hechizo: tiene que imprimir cada pergamino con su número de estante (empezando en 1), pero explota con IndexError. Arreglalo.",
+            "starter": [
+              "pergaminos = input().split(',')",
+              "for i in range(len(pergaminos) + 1):",
+              "    print(f'{i + 1}. {pergaminos[i]}')"
+            ],
+            "tests": [
+              {"inputs": ["runas,mapas,pociones"], "output": "1. runas\n2. mapas\n3. pociones"},
+              {"inputs": ["astros"], "output": "1. astros"},
+              {"inputs": ["a,b"], "output": "1. a\n2. b"}
+            ],
+            "solution": [
+              "pergaminos = input().split(',')",
+              "for i in range(len(pergaminos)):",
+              "    print(f'{i + 1}. {pergaminos[i]}')"
+            ]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "El Espectro hizo girar el estante. Leé una línea de palabras y un número k, y rotá la lista k lugares a la izquierda usando slicing: con a b c d y k = 1 queda b c d a. k puede ser más grande que la cantidad de palabras. Imprimí las palabras separadas por espacios.",
+            "starter": ["palabras = input().split()", "k = int(input())", ""],
+            "tests": [
+              {"inputs": ["a b c d", "1"], "output": "b c d a"},
+              {"inputs": ["a b c d", "0"], "output": "a b c d"},
+              {"inputs": ["uno dos tres", "4"], "output": "dos tres uno"},
+              {"inputs": ["x", "7"], "output": "x"}
+            ],
+            "require": [{"any": ["%"], "message": "k puede ser más grande que la lista: usá k % len(palabras)."}],
+            "solution": [
+              "palabras = input().split()",
+              "k = int(input())",
+              "k = k % len(palabras)",
+              "rotada = palabras[k:] + palabras[:k]",
+              "print(' '.join(rotada))"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 5,
       "name": "Salón de las Runas",
       "color": "#7A4A3A",
-      "status": "designed",
+      "status": "playable",
       "topics": ["diccionarios", "sets", "estructuras anidadas"],
+      "story": "Un salón donde cada runa guarda un valor bajo una llave. El Archivista del Caos mezcla las llaves y nadie encuentra nada.",
       "boss": "archivista_caos",
-      "levels": []
+      "section_map": {
+        "player_start": [2, 7],
+        "houses": [
+          {"id": "w5_l1", "kind": "level", "pos": [4, 5]},
+          {"id": "w5_l2", "kind": "level", "pos": [7, 3]},
+          {"id": "w5_l3", "kind": "level", "pos": [10, 6]},
+          {"id": "w5_l4", "kind": "level", "pos": [13, 3]},
+          {"id": "w5_l5", "kind": "level", "pos": [16, 6]},
+          {"id": "w5_mini", "kind": "minigame", "pos": [19, 4]},
+          {"id": "w5_boss", "kind": "boss", "pos": [22, 7]}
+        ]
+      },
+      "levels": [
+        {
+          "id": "w5_l1",
+          "title": "La runa justa",
+          "mechanic": "frasco",
+          "story": "El mercader del salón cobra por runa. El caldero pide gastar justo 10 monedas eligiendo dos cosas del diccionario precios. Las claves tienen que estar escritas exactamente igual.",
+          "given": ["precios = {'pocion': 7, 'pluma': 3, 'vela': 2}"],
+          "goal": {"value": 10, "type": "int"},
+          "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "str"}],
+          "tokens": [
+            {"value": "pocion", "type": "str"},
+            {"value": "pluma", "type": "str"},
+            {"value": "Pluma", "type": "str"},
+            {"value": "vela", "type": "str"},
+            {"value": 3, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "precios[a] + precios[b]",
+          "solution_any": [{"a": "pocion", "b": "pluma"}, {"a": "pluma", "b": "pocion"}],
+          "hints": [
+            "precios['vela'] da 2: entre corchetes va la clave, y te devuelve su valor.",
+            "Buscá dos valores que sumen 10. Ojo: 'Pluma' con mayúscula no es la misma clave que 'pluma'.",
+            "precios['pocion'] + precios['pluma'] da 7 + 3 = 10."
+          ]
+        },
+        {
+          "id": "w5_l2",
+          "title": "Nombres sin repetir",
+          "mechanic": "frasco",
+          "story": "El registro del salón es un set: cada nombre aparece una sola vez aunque lo anotes dos veces. El caldero pide que, después de anotar a dos aprendices, el registro tenga exactamente 3 nombres.",
+          "given": ["vistos = {'Ada', 'Grace'}"],
+          "goal": {"value": 3, "type": "int"},
+          "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "str"}],
+          "tokens": [
+            {"value": "Ada", "type": "str"},
+            {"value": "Linus", "type": "str"},
+            {"value": "Hedy", "type": "str"},
+            {"value": "ada", "type": "str"}
+          ],
+          "operators": [],
+          "expression": "len(vistos | {a, b})",
+          "solution_any": [
+            {"a": "Ada", "b": "Linus"},
+            {"a": "Linus", "b": "Ada"},
+            {"a": "Ada", "b": "Hedy"},
+            {"a": "Hedy", "b": "Ada"},
+            {"a": "Ada", "b": "ada"},
+            {"a": "ada", "b": "Ada"}
+          ],
+          "hints": [
+            "Un set no guarda repetidos: {'Ada', 'Ada'} tiene un solo elemento.",
+            "vistos | {a, b} junta los dos sets. Para llegar a 3, uno de los dos nombres tiene que estar repetido.",
+            "Por ejemplo a = 'Ada' (ya estaba) y b = 'Linus' (nuevo). Ojo: 'ada' en minúscula es otro nombre."
+          ]
+        },
+        {
+          "id": "w5_l3",
+          "title": "El contador de runas",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Las runas del salón repiten palabras mágicas. El Archivista perdió la cuenta y hay que rehacerla.",
+          "task": "Leé una línea de palabras separadas por espacios y contá cuántas veces aparece cada una usando un diccionario. Imprimí cada palabra con su cantidad (palabra: n), en el orden en que aparecieron por primera vez.",
+          "starter": ["palabras = input().split()", "conteo = {}", "", ""],
+          "tests": [
+            {"inputs": ["fuego agua fuego aire fuego agua"], "output": "fuego: 3\nagua: 2\naire: 1"},
+            {"inputs": ["runa"], "output": "runa: 1"},
+            {"inputs": ["a b a b c"], "output": "a: 2\nb: 2\nc: 1"},
+            {"inputs": ["Sol sol SOL"], "output": "Sol: 1\nsol: 1\nSOL: 1"}
+          ],
+          "require": [{"any": ["conteo["], "message": "Guardá la cuenta en el diccionario conteo."}],
+          "forbid": [{"any": [".count("], "message": "Esta vez contá con el diccionario, sin usar .count()."}],
+          "solution": [
+            "palabras = input().split()",
+            "conteo = {}",
+            "for p in palabras:",
+            "    conteo[p] = conteo.get(p, 0) + 1",
+            "for p, n in conteo.items():",
+            "    print(f'{p}: {n}')"
+          ],
+          "hints": [
+            "conteo.get(p, 0) devuelve la cuenta de p, o 0 si todavía no está: así no aparece el KeyError.",
+            "En cada vuelta: conteo[p] = conteo.get(p, 0) + 1. Los diccionarios recuerdan el orden en que entraron las claves.",
+            "Al final: for p, n in conteo.items(): print(f'{p}: {n}')."
+          ]
+        },
+        {
+          "id": "w5_l4",
+          "title": "Aprendices en común",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Hay aprendices que van a la clase de runas, otros a la de pociones, y algunos a las dos. Ada quiere saber quiénes.",
+          "task": "Leé dos líneas con los aprendices de runas y de pociones (nombres separados por espacios). Imprimí en orden alfabético y separados por espacios: en una línea los que están en las dos clases, y en otra los que están solo en runas. Si una lista queda vacía, imprimí (nadie).",
+          "starter": ["runas = set(input().split())", "pociones = set(input().split())", ""],
+          "tests": [
+            {"inputs": ["Ada Linus Grace", "Grace Alan Ada"], "output": "Ada Grace\nLinus"},
+            {"inputs": ["Ada", "Ada"], "output": "Ada\n(nadie)"},
+            {"inputs": ["Hedy Alan", "Grace"], "output": "(nadie)\nAlan Hedy"},
+            {"inputs": ["c b a", "a c"], "output": "a c\nb"}
+          ],
+          "require": [{"any": ["&", "intersection"], "message": "Usá & (o .intersection()) para la parte en común."}],
+          "solution": [
+            "runas = set(input().split())",
+            "pociones = set(input().split())",
+            "ambas = sorted(runas & pociones)",
+            "solo = sorted(runas - pociones)",
+            "for grupo in [ambas, solo]:",
+            "    if grupo:",
+            "        print(' '.join(grupo))",
+            "    else:",
+            "        print('(nadie)')"
+          ],
+          "hints": [
+            "a & b da lo que está en los dos sets, y a - b lo que está en a pero no en b.",
+            "Los sets no tienen orden: pasalos por sorted() antes de imprimir. ' '.join(lista) los une con espacios.",
+            "Una lista vacía es falsa: if lista: ... else: print('(nadie)')."
+          ]
+        },
+        {
+          "id": "w5_l5",
+          "title": "El libro de calificaciones",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Cada aprendiz rinde varias veces. Ada guarda las notas en un diccionario de listas: el nombre es la clave y la lista de notas, el valor.",
+          "task": "Leé n y después n líneas con el formato nombre nota (un aprendiz puede aparecer varias veces). Guardá las notas en un diccionario de listas e imprimí cada aprendiz con su promedio con un decimal, en el orden en que apareció: nombre: promedio",
+          "starter": [
+            "n = int(input())",
+            "notas = {}",
+            "for i in range(n):",
+            "    nombre, nota = input().split()",
+            "",
+            ""
+          ],
+          "tests": [
+            {"inputs": ["4", "Ada 8", "Linus 6", "Ada 10", "Linus 7"], "output": "Ada: 9.0\nLinus: 6.5"},
+            {"inputs": ["1", "Grace 7"], "output": "Grace: 7.0"},
+            {"inputs": ["3", "Alan 9", "Alan 8", "Alan 8"], "output": "Alan: 8.3"},
+            {"inputs": ["2", "Hedy 10", "Ada 4"], "output": "Hedy: 10.0\nAda: 4.0"}
+          ],
+          "solution": [
+            "n = int(input())",
+            "notas = {}",
+            "for i in range(n):",
+            "    nombre, nota = input().split()",
+            "    if nombre not in notas:",
+            "        notas[nombre] = []",
+            "    notas[nombre].append(int(nota))",
+            "for nombre, lista in notas.items():",
+            "    print(f'{nombre}: {sum(lista) / len(lista):.1f}')"
+          ],
+          "hints": [
+            "Antes de agregar una nota, la lista del aprendiz tiene que existir: if nombre not in notas: notas[nombre] = [].",
+            "notas[nombre].append(int(nota)) agrega la nota a la lista de ese aprendiz.",
+            "Al final recorré notas.items() e imprimí f'{nombre}: {sum(lista) / len(lista):.1f}'."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w5_mini",
+        "kind": "trivia_del_aula",
+        "title": "Trivia del aula",
+        "rounds": [
+          {
+            "question": "¿Qué imprime este código?",
+            "code": ["d = {'a': 1, 'a': 2}", "print(d)"],
+            "options": ["{'a': 1, 'a': 2}", "{'a': 2}", "{'a': 1}"],
+            "answer": "{'a': 2}",
+            "verify": true,
+            "explain": "Las claves no se repiten: la segunda 'a' pisa a la primera.",
+            "hint": "¿Puede un diccionario tener dos veces la misma clave?"
+          },
+          {
+            "question": "¿Cuál de estos valores puede ser clave de un diccionario?",
+            "options": ["[1, 2]", "(1, 2)", "{1, 2}"],
+            "answer": "(1, 2)",
+            "explain": "Las claves tienen que ser inmutables: las tuplas sirven, las listas y los sets no (dan TypeError: unhashable type).",
+            "hint": "Una clave no puede cambiar después de guardarla."
+          },
+          {
+            "question": "¿De qué tipo es x?",
+            "code": ["x = {}"],
+            "options": ["set", "dict", "list"],
+            "answer": "dict",
+            "explain": "{} es un diccionario vacío. Un set vacío se escribe set().",
+            "hint": "Las llaves vacías se usaron primero para otra cosa."
+          },
+          {
+            "question": "¿Qué pasa al correr esto?",
+            "code": ["inv = {'pluma': 2}", "print(inv['vela'])"],
+            "options": ["Imprime 0", "Imprime None", "KeyError"],
+            "answer": "KeyError",
+            "verify": true,
+            "explain": "Con corchetes, una clave que no existe da KeyError. inv.get('vela') devolvería None, e inv.get('vela', 0) devolvería 0.",
+            "hint": "Los corchetes no perdonan una clave que falta."
+          },
+          {
+            "question": "¿Qué imprime?",
+            "code": ["s = {3, 1, 3, 2, 1}", "print(len(s))"],
+            "options": ["5", "3", "2"],
+            "answer": "3",
+            "verify": true,
+            "explain": "Un set guarda cada valor una sola vez: quedan 1, 2 y 3.",
+            "hint": "Contá los valores distintos."
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w5_boss",
+        "enemy": "archivista_caos",
+        "title": "El Archivista del Caos",
+        "taunt": "El Archivista del Caos mezcla las llaves de todos los diccionarios. Encontrá cada cosa en su lugar para bajarle la vida.",
+        "victory": "El Archivista suelta sus llaves y las runas vuelven a brillar en orden. Del otro lado se abre el Taller de Embrujos.",
+        "rounds": [
+          {
+            "mechanic": "frasco",
+            "given": ["biblioteca = {'runas': ['fuego', 'agua'], 'pociones': ['sueño', 'risa', 'vuelo']}"],
+            "goal": {"value": "vuelo", "type": "str"},
+            "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "int"}],
+            "tokens": [
+              {"value": "pociones", "type": "str"},
+              {"value": "runas", "type": "str"},
+              {"value": 2, "type": "int"},
+              {"value": -1, "type": "int"},
+              {"value": 3, "type": "int"},
+              {"value": "vuelo", "type": "str"}
+            ],
+            "operators": [],
+            "expression": "biblioteca[a][b]",
+            "solution_any": [{"a": "pociones", "b": 2}, {"a": "pociones", "b": -1}]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "El Archivista rompió el contador de letras: tiene que imprimir cuántas veces aparece cada letra (letra=n, separadas por espacios y en el orden en que aparecen), pero explota con KeyError. Arreglalo.",
+            "starter": [
+              "palabra = input()",
+              "conteo = {}",
+              "for letra in palabra:",
+              "    conteo[letra] += 1",
+              "partes = []",
+              "for letra, n in conteo.items():",
+              "    partes.append(f'{letra}={n}')",
+              "print(' '.join(partes))"
+            ],
+            "tests": [
+              {"inputs": ["abracadabra"], "output": "a=5 b=2 r=2 c=1 d=1"},
+              {"inputs": ["ojo"], "output": "o=2 j=1"},
+              {"inputs": ["x"], "output": "x=1"}
+            ],
+            "solution": [
+              "palabra = input()",
+              "conteo = {}",
+              "for letra in palabra:",
+              "    conteo[letra] = conteo.get(letra, 0) + 1",
+              "partes = []",
+              "for letra, n in conteo.items():",
+              "    partes.append(f'{letra}={n}')",
+              "print(' '.join(partes))"
+            ]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "Leé n y después n líneas objeto cantidad (los objetos pueden repetirse: sumá las cantidades). Después leé una línea con lo que pide la receta. Imprimí Falta: objeto por cada objeto de la receta que no tengas (o tengas 0), en el orden de la receta. Si no falta nada, imprimí Receta lista.",
+            "starter": ["n = int(input())", "inventario = {}", ""],
+            "tests": [
+              {"inputs": ["3", "pluma 2", "vela 1", "pluma 1", "pluma vela tinta"], "output": "Falta: tinta"},
+              {"inputs": ["2", "vela 1", "tinta 3", "vela tinta"], "output": "Receta lista"},
+              {"inputs": ["1", "pluma 0", "pluma vela"], "output": "Falta: pluma\nFalta: vela"},
+              {"inputs": ["0", "runa"], "output": "Falta: runa"}
+            ],
+            "solution": [
+              "n = int(input())",
+              "inventario = {}",
+              "for i in range(n):",
+              "    obj, cant = input().split()",
+              "    inventario[obj] = inventario.get(obj, 0) + int(cant)",
+              "faltan = [o for o in input().split() if inventario.get(o, 0) == 0]",
+              "for o in faltan:",
+              "    print(f'Falta: {o}')",
+              "if not faltan:",
+              "    print('Receta lista')"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 6,
       "name": "Taller de Embrujos",
       "color": "#B5547A",
-      "status": "designed",
+      "status": "playable",
       "topics": ["funciones", "parámetros", "return", "scope"],
+      "story": "Un taller donde los hechizos se guardan con nombre para usarlos cuantas veces quieras. El Hechicero Espagueti copia y pega todo, y su código es una maraña.",
       "boss": "hechicero_espagueti",
-      "levels": []
+      "section_map": {
+        "player_start": [2, 3],
+        "houses": [
+          {"id": "w6_l1", "kind": "level", "pos": [5, 5]},
+          {"id": "w6_l2", "kind": "level", "pos": [8, 7]},
+          {"id": "w6_l3", "kind": "level", "pos": [11, 4]},
+          {"id": "w6_l4", "kind": "level", "pos": [14, 7]},
+          {"id": "w6_l5", "kind": "level", "pos": [17, 4]},
+          {"id": "w6_mini", "kind": "minigame", "pos": [20, 6]},
+          {"id": "w6_boss", "kind": "boss", "pos": [23, 3]}
+        ]
+      },
+      "levels": [
+        {
+          "id": "w6_l1",
+          "title": "El escudo con valor por defecto",
+          "mechanic": "frasco",
+          "story": "El hechizo escudo(nivel, bonus=3) ya está escrito en el grimorio: si no le pasás el bonus, usa 3. El caldero pide 17 de defensa sumando dos escudos.",
+          "given": ["def escudo(nivel, bonus=3):", "    return nivel * 2 + bonus"],
+          "goal": {"value": 17, "type": "int"},
+          "jars": [{"name": "a", "accepts": "int"}, {"name": "b", "accepts": "int"}],
+          "tokens": [
+            {"value": 4, "type": "int"},
+            {"value": 3, "type": "int"},
+            {"value": 5, "type": "int"},
+            {"value": 2, "type": "int"},
+            {"value": "4", "type": "str"}
+          ],
+          "operators": [],
+          "expression": "escudo(a) + escudo(b, 0)",
+          "solution_any": [{"a": 4, "b": 3}, {"a": 3, "b": 4}, {"a": 5, "b": 2}, {"a": 2, "b": 5}],
+          "hints": [
+            "escudo(a) usa bonus=3 porque no se lo pasaste; escudo(b, 0) usa bonus=0.",
+            "escudo(a) + escudo(b, 0) es (2·a + 3) + (2·b + 0). Para llegar a 17, a + b tiene que dar 7.",
+            "Por ejemplo a = 4 y b = 3: escudo(4) da 11 y escudo(3, 0) da 6."
+          ]
+        },
+        {
+          "id": "w6_l2",
+          "title": "La x de adentro y la de afuera",
+          "mechanic": "frasco",
+          "story": "Hay una x afuera de la función y otra adentro: el parámetro. Cambiar la de adentro no toca la de afuera. El caldero pide 18.",
+          "given": ["x = 10", "def cambiar(x):", "    x = x + 5", "    return x"],
+          "goal": {"value": 18, "type": "int"},
+          "jars": [{"name": "a", "accepts": "int"}],
+          "tokens": [
+            {"value": 3, "type": "int"},
+            {"value": 8, "type": "int"},
+            {"value": 13, "type": "int"},
+            {"value": "3", "type": "str"}
+          ],
+          "operators": [],
+          "expression": "cambiar(a) + x",
+          "solution_any": [{"a": 3}],
+          "hints": [
+            "El parámetro x de cambiar es una variable nueva, local a la función: la x = 10 de afuera no cambia.",
+            "cambiar(a) devuelve a + 5, y después se le suma la x de afuera, que sigue valiendo 10.",
+            "a + 5 + 10 = 18, así que a = 3."
+          ]
+        },
+        {
+          "id": "w6_l3",
+          "title": "Primos del taller",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Los hechizos más fuertes del taller se forjan con números primos. Ada quiere una función que los reconozca para no revisarlos uno por uno.",
+          "task": "Escribí la función es_primo(n) que devuelva True si n es primo y False si no (el 1 no es primo). Después leé un número m e imprimí todos los primos desde 2 hasta m, separados por espacios.",
+          "starter": ["def es_primo(n):", "    # devolvé True o False", "    pass", "", "m = int(input())", ""],
+          "tests": [
+            {"inputs": ["10"], "output": "2 3 5 7"},
+            {"inputs": ["2"], "output": "2"},
+            {"inputs": ["30"], "output": "2 3 5 7 11 13 17 19 23 29"},
+            {"inputs": ["20"], "output": "2 3 5 7 11 13 17 19"}
+          ],
+          "require": [
+            {"any": ["def es_primo"], "message": "Definí la función es_primo(n)."},
+            {
+              "any": ["return"],
+              "message": "es_primo tiene que devolver el resultado con return, no imprimirlo."
+            }
+          ],
+          "solution": [
+            "def es_primo(n):",
+            "    if n < 2:",
+            "        return False",
+            "    for d in range(2, n):",
+            "        if n % d == 0:",
+            "            return False",
+            "    return True",
+            "",
+            "m = int(input())",
+            "primos = [str(k) for k in range(2, m + 1) if es_primo(k)]",
+            "print(' '.join(primos))"
+          ],
+          "hints": [
+            "Un número es primo si es mayor que 1 y ningún d entre 2 y n - 1 lo divide (n % d == 0).",
+            "Adentro del for, apenas encontrás un divisor hacé return False. Si el for termina sin encontrar ninguno, return True.",
+            "Para imprimir: recorré range(2, m + 1), guardá str(k) de los primos en una lista y usá ' '.join(lista)."
+          ]
+        },
+        {
+          "id": "w6_l4",
+          "title": "El hechizo que devuelve tres cosas",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Un buen hechizo puede devolver más de un resultado a la vez: Python los empaqueta en una tupla.",
+          "task": "Escribí la función resumen(numeros) que devuelva tres valores: el menor, el mayor y el promedio. Leé una línea de números, llamá a la función, desarmá el resultado en tres variables e imprimí min=… max=… promedio=… (el promedio con 2 decimales).",
+          "starter": ["def resumen(numeros):", "    pass", "", "numeros = [int(x) for x in input().split()]", ""],
+          "tests": [
+            {"inputs": ["4 8 6"], "output": "min=4 max=8 promedio=6.00"},
+            {"inputs": ["5"], "output": "min=5 max=5 promedio=5.00"},
+            {"inputs": ["10 -3 7 1"], "output": "min=-3 max=10 promedio=3.75"},
+            {"inputs": ["1 2"], "output": "min=1 max=2 promedio=1.50"}
+          ],
+          "require": [
+            {"any": ["def resumen"], "message": "Definí la función resumen(numeros)."},
+            {"any": ["return"], "message": "resumen tiene que devolver los tres valores con return."}
+          ],
+          "solution": [
+            "def resumen(numeros):",
+            "    return min(numeros), max(numeros), sum(numeros) / len(numeros)",
+            "",
+            "numeros = [int(x) for x in input().split()]",
+            "menor, mayor, prom = resumen(numeros)",
+            "print(f'min={menor} max={mayor} promedio={prom:.2f}')"
+          ],
+          "hints": [
+            "return a, b, c devuelve una tupla con los tres valores.",
+            "Al llamarla podés desarmar la tupla: menor, mayor, prom = resumen(numeros).",
+            "En el f-string, {prom:.2f} muestra el promedio con dos decimales."
+          ]
+        },
+        {
+          "id": "w6_l5",
+          "title": "print no es return",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Un aprendiz escribió una función de descuentos, pero el programa muestra None por todos lados.",
+          "task": "Este hechizo tiene que imprimir el precio con descuento de cada poción, una línea por poción (nombre: precio), pero aparecen números sueltos y None. La función imprime en vez de devolver: arreglala.",
+          "starter": [
+            "def con_descuento(precio, porcentaje=10):",
+            "    print(precio - precio * porcentaje // 100)",
+            "",
+            "n = int(input())",
+            "for i in range(n):",
+            "    nombre, precio = input().split()",
+            "    final = con_descuento(int(precio))",
+            "    print(f'{nombre}: {final}')"
+          ],
+          "tests": [
+            {"inputs": ["2", "sueño 200", "risa 55"], "output": "sueño: 180\nrisa: 50"},
+            {"inputs": ["1", "vuelo 1000"], "output": "vuelo: 900"},
+            {"inputs": ["3", "a 10", "b 99", "c 7"], "output": "a: 9\nb: 90\nc: 7"}
+          ],
+          "solution": [
+            "def con_descuento(precio, porcentaje=10):",
+            "    return precio - precio * porcentaje // 100",
+            "",
+            "n = int(input())",
+            "for i in range(n):",
+            "    nombre, precio = input().split()",
+            "    final = con_descuento(int(precio))",
+            "    print(f'{nombre}: {final}')"
+          ],
+          "hints": [
+            "print muestra un valor en pantalla, pero la función igual devuelve None. return se lo devuelve a quien la llamó.",
+            "Cambiá el print de adentro de la función por un return con la misma cuenta.",
+            "def con_descuento(precio, porcentaje=10): return precio - precio * porcentaje // 100"
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w6_mini",
+        "kind": "ordena_el_conjuro",
+        "title": "Ordena el conjuro",
+        "rounds": [
+          {
+            "lines": ["def area(base, altura):", "    return base * altura", "print(area(3, 4))"],
+            "extra": ["    print(base * altura)"],
+            "output": "12"
+          },
+          {
+            "lines": [
+              "def saludar(nombre, saludo='Hola'):",
+              "    return f'{saludo}, {nombre}'",
+              "print(saludar('Ada'))",
+              "print(saludar('Linus', 'Chau'))"
+            ],
+            "output": "Hola, Ada\nChau, Linus"
+          },
+          {
+            "lines": [
+              "contador = 0",
+              "def contar():",
+              "    global contador",
+              "    contador += 1",
+              "contar()",
+              "contar()",
+              "print(contador)"
+            ],
+            "output": "2"
+          },
+          {
+            "lines": [
+              "def aplicar(f, valores):",
+              "    return [f(v) for v in valores]",
+              "doble = lambda x: x * 2",
+              "print(aplicar(doble, [1, 2, 3]))"
+            ],
+            "output": "[2, 4, 6]"
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w6_boss",
+        "enemy": "hechicero_espagueti",
+        "title": "El Hechicero Espagueti",
+        "taunt": "El Hechicero Espagueti copia y pega el mismo hechizo mil veces. Desenredalo con funciones para bajarle la vida.",
+        "victory": "Sin espaguetis que enredar, el Hechicero huye por la chimenea del taller. Más abajo esperan las Catacumbas de los Errores.",
+        "rounds": [
+          {
+            "mechanic": "frasco",
+            "given": ["def mezcla(a, b, veces=1):", "    return (a - b) * veces"],
+            "goal": {"value": 5, "type": "int"},
+            "jars": [{"name": "x", "accepts": "int"}, {"name": "y", "accepts": "int"}],
+            "tokens": [
+              {"value": 3, "type": "int"},
+              {"value": 8, "type": "int"},
+              {"value": 2, "type": "int"},
+              {"value": 7, "type": "int"},
+              {"value": "8", "type": "str"}
+            ],
+            "operators": [],
+            "expression": "mezcla(x, y) + mezcla(b=x, a=y, veces=2)",
+            "solution_any": [{"x": 3, "y": 8}, {"x": 2, "y": 7}]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "El Hechicero copió tres veces la misma cuenta y en una copia se equivocó. Reescribí el hechizo con una función total(precio, cantidad, descuento=0) que devuelva precio * cantidad menos el descuento en %, y usala para las 3 líneas de entrada (precio cantidad descuento). Imprimí cada total con 2 decimales.",
+            "starter": [
+              "p1, c1, d1 = input().split()",
+              "print(f'{int(p1) * int(c1) * (100 - int(d1)) / 100:.2f}')",
+              "p2, c2, d2 = input().split()",
+              "print(f'{int(p2) * int(c2) * (100 - int(d2)) / 100:.2f}')",
+              "p3, c3, d3 = input().split()",
+              "print(f'{int(p3) * int(c3) * (100 - int(d2)) / 100:.2f}')"
+            ],
+            "tests": [
+              {"inputs": ["100 2 10", "50 1 0", "30 3 50"], "output": "180.00\n50.00\n45.00"},
+              {"inputs": ["10 10 0", "7 3 20", "1 1 1"], "output": "100.00\n16.80\n0.99"}
+            ],
+            "require": [
+              {
+                "any": ["def total"],
+                "message": "Definí la función total(precio, cantidad, descuento=0) y usala."
+              }
+            ],
+            "solution": [
+              "def total(precio, cantidad, descuento=0):",
+              "    return precio * cantidad * (100 - descuento) / 100",
+              "",
+              "for i in range(3):",
+              "    p, c, d = input().split()",
+              "    print(f'{total(int(p), int(c), int(d)):.2f}')"
+            ]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "Escribí aplicar_n(f, x, n) que aplique la función f a x, n veces seguidas, y devuelva el resultado. doble y siguiente ya están escritas: el programa imprime aplicar_n(doble, x, n) y aplicar_n(siguiente, x, n).",
+            "starter": [
+              "def doble(v):",
+              "    return v * 2",
+              "",
+              "def siguiente(v):",
+              "    return v + 1",
+              "",
+              "def aplicar_n(f, x, n):",
+              "    pass",
+              "",
+              "x = int(input())",
+              "n = int(input())",
+              "print(aplicar_n(doble, x, n))",
+              "print(aplicar_n(siguiente, x, n))"
+            ],
+            "tests": [
+              {"inputs": ["3", "2"], "output": "12\n5"},
+              {"inputs": ["5", "0"], "output": "5\n5"},
+              {"inputs": ["1", "10"], "output": "1024\n11"}
+            ],
+            "solution": [
+              "def doble(v):",
+              "    return v * 2",
+              "",
+              "def siguiente(v):",
+              "    return v + 1",
+              "",
+              "def aplicar_n(f, x, n):",
+              "    for i in range(n):",
+              "        x = f(x)",
+              "    return x",
+              "",
+              "x = int(input())",
+              "n = int(input())",
+              "print(aplicar_n(doble, x, n))",
+              "print(aplicar_n(siguiente, x, n))"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 7,
       "name": "Catacumbas de los Errores",
       "color": "#5A6270",
-      "status": "designed",
+      "status": "playable",
       "topics": ["try/except", "archivos"],
+      "story": "Catacumbas oscuras donde los hechizos que fallan rebotan contra las paredes. Hay que aprender a atrapar los errores y a leer los viejos archivos de piedra.",
       "boss": "hechizo_rebotado",
-      "levels": []
+      "section_map": {
+        "player_start": [2, 8],
+        "houses": [
+          {"id": "w7_l1", "kind": "level", "pos": [4, 6]},
+          {"id": "w7_l2", "kind": "level", "pos": [7, 4]},
+          {"id": "w7_l3", "kind": "level", "pos": [10, 7]},
+          {"id": "w7_l4", "kind": "level", "pos": [13, 5]},
+          {"id": "w7_l5", "kind": "level", "pos": [16, 7]},
+          {"id": "w7_mini", "kind": "minigame", "pos": [19, 4]},
+          {"id": "w7_boss", "kind": "boss", "pos": [22, 6]}
+        ]
+      },
+      "levels": [
+        {
+          "id": "w7_l1",
+          "title": "El conversor prudente",
+          "mechanic": "frasco",
+          "story": "convertir(texto) intenta pasar el texto a int; si no puede, atrapa el ValueError y devuelve 0 en vez de explotar. El caldero pide 7.",
+          "given": [
+            "def convertir(texto):",
+            "    try:",
+            "        return int(texto)",
+            "    except ValueError:",
+            "        return 0"
+          ],
+          "goal": {"value": 7, "type": "int"},
+          "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "str"}],
+          "tokens": [
+            {"value": "4", "type": "str"},
+            {"value": "3", "type": "str"},
+            {"value": "tres", "type": "str"},
+            {"value": "3.5", "type": "str"},
+            {"value": "7", "type": "str"}
+          ],
+          "operators": [],
+          "expression": "convertir(a) + convertir(b)",
+          "solution_any": [
+            {"a": "4", "b": "3"},
+            {"a": "3", "b": "4"},
+            {"a": "7", "b": "tres"},
+            {"a": "tres", "b": "7"},
+            {"a": "7", "b": "3.5"},
+            {"a": "3.5", "b": "7"}
+          ],
+          "hints": [
+            "int('3.5') e int('tres') dan ValueError: convertir lo atrapa y devuelve 0.",
+            "Así que convertir('7') + convertir('tres') es 7 + 0.",
+            "Sirven '4' y '3', o '7' con cualquier texto que no sea un entero."
+          ]
+        },
+        {
+          "id": "w7_l2",
+          "title": "¿Quién atrapa el error?",
+          "mechanic": "frasco",
+          "story": "buscar(lista, i) atrapa dos errores distintos: si la posición no existe devuelve 'fuera', y si la posición no es un número devuelve 'tipo'. El caldero pide 'c-fuera'.",
+          "given": [
+            "def buscar(lista, i):",
+            "    try:",
+            "        return lista[i]",
+            "    except IndexError:",
+            "        return 'fuera'",
+            "    except TypeError:",
+            "        return 'tipo'"
+          ],
+          "goal": {"value": "c-fuera", "type": "str"},
+          "jars": [{"name": "x", "accepts": "int"}, {"name": "y", "accepts": "int"}],
+          "tokens": [
+            {"value": 2, "type": "int"},
+            {"value": -1, "type": "int"},
+            {"value": 1, "type": "int"},
+            {"value": "1", "type": "str"},
+            {"value": 5, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "buscar(['a', 'b', 'c'], x) + '-' + buscar(['z'], y)",
+          "solution_any": [{"x": 2, "y": 1}, {"x": 2, "y": 5}, {"x": -1, "y": 1}, {"x": -1, "y": 5}],
+          "hints": [
+            "Python prueba los except en orden y entra en el primero que coincide con el error.",
+            "La 'c' está en la posición 2 (o -1). Para que dé 'fuera', la posición en ['z'] no tiene que existir.",
+            "x = 2 (o -1) e y = 1 o 5. Si y fuera '1' (texto), el error sería TypeError y daría 'tipo'."
+          ]
+        },
+        {
+          "id": "w7_l3",
+          "title": "Pedí hasta que sea un número",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "El guardián de la catacumba pregunta un número y no se cansa: si le contestás cualquier cosa, vuelve a preguntar.",
+          "task": "Leé textos con input() hasta que uno sea un entero válido. Por cada texto que no sirva imprimí No es un número: texto. Cuando llegue uno válido, imprimí El doble es N y terminá. Usá try/except ValueError (nada de isdigit).",
+          "starter": ["while True:", "    texto = input()", "    # intentá convertirlo", "    break"],
+          "tests": [
+            {
+              "inputs": ["hola", "3.5", "21"],
+              "output": "No es un número: hola\nNo es un número: 3.5\nEl doble es 42"
+            },
+            {"inputs": ["7"], "output": "El doble es 14"},
+            {"inputs": ["-4"], "output": "El doble es -8"},
+            {"inputs": ["", "x", "0"], "output": "No es un número: \nNo es un número: x\nEl doble es 0"}
+          ],
+          "require": [
+            {"any": ["try"], "message": "Usá try para intentar la conversión."},
+            {"any": ["except ValueError"], "message": "Atrapá el error con except ValueError."}
+          ],
+          "forbid": [
+            {
+              "any": ["isdigit", "isnumeric"],
+              "message": "Esta vez usá try/except: probá convertir y atrapá el error."
+            }
+          ],
+          "solution": [
+            "while True:",
+            "    texto = input()",
+            "    try:",
+            "        n = int(texto)",
+            "    except ValueError:",
+            "        print(f'No es un número: {texto}')",
+            "    else:",
+            "        print(f'El doble es {n * 2}')",
+            "        break"
+          ],
+          "hints": [
+            "Poné el int(texto) adentro de un try: si falla, Python salta al except ValueError en vez de cortar el programa.",
+            "En el except imprimí el aviso y el bucle vuelve a pedir. Si la conversión anduvo, imprimí el doble y cortá con break.",
+            "try: n = int(texto) / except ValueError: print(...) / else: print(f'El doble es {n * 2}') y break."
+          ]
+        },
+        {
+          "id": "w7_l4",
+          "title": "Las notas grabadas en piedra",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "En las catacumbas hay un archivo notas.txt con una línea por aprendiz: nombre,nota. A veces el archivo no está.",
+          "task": "Leé el archivo notas.txt e imprimí el promedio de las notas con 2 decimales: Promedio: N. Si el archivo no existe, imprimí No encontré notas.txt en vez de explotar.",
+          "starter": ["# abrí notas.txt con open() y leé cada línea", ""],
+          "tests": [
+            {"files": {"notas.txt": "Ada,9\nLinus,7\nGrace,8\n"}, "output": "Promedio: 8.00"},
+            {"files": {"notas.txt": "Alan,10\n"}, "output": "Promedio: 10.00"},
+            {"files": {}, "output": "No encontré notas.txt"},
+            {"files": {"notas.txt": "A,5\nB,6\n"}, "output": "Promedio: 5.50"}
+          ],
+          "require": [
+            {"any": ["open("], "message": "Abrí el archivo con open('notas.txt')."},
+            {
+              "any": ["FileNotFoundError"],
+              "message": "Atrapá el FileNotFoundError para el caso en que el archivo no existe."
+            }
+          ],
+          "solution": [
+            "try:",
+            "    with open('notas.txt') as f:",
+            "        notas = [int(linea.strip().split(',')[1]) for linea in f]",
+            "    print(f'Promedio: {sum(notas) / len(notas):.2f}')",
+            "except FileNotFoundError:",
+            "    print('No encontré notas.txt')"
+          ],
+          "hints": [
+            "with open('notas.txt') as f: abre el archivo y lo cierra solo al terminar. for linea in f recorre las líneas (cada una termina en \\n).",
+            "linea.strip().split(',') da [nombre, nota]: convertí la nota con int() y guardala en una lista.",
+            "Envolvé todo en try y agregá except FileNotFoundError: print('No encontré notas.txt')."
+          ]
+        },
+        {
+          "id": "w7_l5",
+          "title": "El registro de la expedición",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Antes de bajar más hondo, la expedición anota en un archivo todo lo que lleva.",
+          "task": "Leé un número n y después n palabras, una por línea. Escribilas en el archivo registro.txt, una por línea y en mayúsculas (si el archivo ya existía, se reemplaza). Después volvé a abrirlo para leerlo e imprimí Líneas en el registro: N.",
+          "starter": ["n = int(input())", ""],
+          "tests": [
+            {
+              "inputs": ["3", "antorcha", "cuerda", "mapa"],
+              "output": "Líneas en el registro: 3",
+              "files_out": {"registro.txt": "ANTORCHA\nCUERDA\nMAPA\n"}
+            },
+            {
+              "inputs": ["1", "llave"],
+              "output": "Líneas en el registro: 1",
+              "files_out": {"registro.txt": "LLAVE\n"}
+            },
+            {
+              "inputs": ["2", "pan", "agua"],
+              "files": {"registro.txt": "VIEJO\nVIEJO\nVIEJO\n"},
+              "output": "Líneas en el registro: 2",
+              "files_out": {"registro.txt": "PAN\nAGUA\n"}
+            }
+          ],
+          "require": [{"any": ["'w'", "\"w\""], "message": "Abrí el archivo en modo 'w' para escribir."}],
+          "solution": [
+            "n = int(input())",
+            "with open('registro.txt', 'w') as f:",
+            "    for i in range(n):",
+            "        f.write(input().upper() + '\\n')",
+            "with open('registro.txt') as f:",
+            "    lineas = f.readlines()",
+            "print(f'Líneas en el registro: {len(lineas)}')"
+          ],
+          "hints": [
+            "open('registro.txt', 'w') crea el archivo (o lo vacía si ya existía). f.write() no agrega el salto de línea: sumale '\\n'.",
+            "Cerrá el archivo (el with lo hace solo) antes de abrirlo de nuevo para leer.",
+            "f.readlines() da la lista de líneas: len() te dice cuántas hay."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w7_mini",
+        "kind": "duelo_de_bugs",
+        "title": "Duelo de Bugs",
+        "rounds": [
+          {
+            "code": [
+              "texto = input()",
+              "try:",
+              "    print(int(texto) * 2)",
+              "except TypeError:",
+              "    print('inválido')"
+            ],
+            "inputs": ["hola"],
+            "output": "inválido",
+            "fixes": [
+              {"line": 4, "text": "except ValueError:"},
+              {"line": 3, "text": "    print(int(texto * 2))"},
+              {"line": 5, "text": "    print('hola')"}
+            ]
+          },
+          {
+            "code": [
+              "with open('diario.txt', 'w') as f:",
+              "    f.write('día 2\\n')",
+              "print(open('diario.txt').read())"
+            ],
+            "files": {"diario.txt": "día 1\n"},
+            "output": "día 1\ndía 2",
+            "fixes": [
+              {"line": 1, "text": "with open('diario.txt', 'a') as f:"},
+              {"line": 1, "text": "with open('diario.txt', 'r') as f:"},
+              {"line": 3, "text": "print(open('diario.txt', 'w').read())"}
+            ]
+          },
+          {
+            "code": [
+              "def dividir(a, b):",
+              "    try:",
+              "        return a / b",
+              "    except ZeroDivisionError:",
+              "        print('no se puede')",
+              "print(dividir(6, 3), dividir(1, 0))"
+            ],
+            "output": "2.0 0",
+            "fixes": [
+              {"line": 5, "text": "        return 0"},
+              {"line": 4, "text": "    except ValueError:"},
+              {"line": 3, "text": "        return a // b"}
+            ]
+          },
+          {
+            "code": [
+              "notas = [7, 9]",
+              "try:",
+              "    print(notas[5])",
+              "except Exception:",
+              "    print('error genérico')",
+              "except IndexError:",
+              "    print('no hay tanta nota')"
+            ],
+            "output": "no hay tanta nota",
+            "fixes": [
+              {"line": 4, "text": "except KeyError:"},
+              {"line": 6, "text": "except LookupError:"},
+              {"line": 3, "text": "    print(notas[1])"}
+            ]
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w7_boss",
+        "enemy": "hechizo_rebotado",
+        "title": "El Hechizo Rebotado",
+        "taunt": "El Hechizo Rebotado es un error que nadie atrapó: rebota de pared en pared rompiendo todo. Atrapalo para bajarle la vida.",
+        "victory": "Atrapado en un except, el Hechizo Rebotado se apaga como una chispa. Al fondo de las catacumbas brilla la Cámara de los Espejos.",
+        "rounds": [
+          {
+            "mechanic": "frasco",
+            "given": [
+              "def leer_nivel(texto):",
+              "    try:",
+              "        nivel = int(texto)",
+              "        if nivel < 0:",
+              "            raise ValueError('negativo')",
+              "        return nivel",
+              "    except ValueError:",
+              "        return -1"
+            ],
+            "goal": {"value": 6, "type": "int"},
+            "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "str"}],
+            "tokens": [
+              {"value": "-3", "type": "str"},
+              {"value": "-2", "type": "str"},
+              {"value": "3", "type": "str"},
+              {"value": "2", "type": "str"},
+              {"value": "x", "type": "str"}
+            ],
+            "operators": [],
+            "expression": "leer_nivel(a) * leer_nivel(b)",
+            "solution_any": [{"a": "3", "b": "2"}, {"a": "2", "b": "3"}]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "Leé líneas con cuentas a b op (por ejemplo 8 2 /) hasta que llegue la palabra fin, e imprimí el resultado de cada una (la división con /, que da float). Si un número no es válido imprimí Error: número inválido; si se divide por cero, Error: división por cero; si el operador no es + - * /, Error: operador desconocido. El programa nunca tiene que explotar.",
+            "starter": [
+              "linea = input()",
+              "while linea != 'fin':",
+              "    a, b, op = linea.split()",
+              "    # calculá y mostrá el resultado",
+              "    linea = input()"
+            ],
+            "tests": [
+              {
+                "inputs": ["8 2 /", "3 x +", "5 0 /", "2 3 ^", "4 5 *", "fin"],
+                "output": "4.0\nError: número inválido\nError: división por cero\nError: operador desconocido\n20"
+              },
+              {"inputs": ["1 1 +", "fin"], "output": "2"},
+              {"inputs": ["10 4 -", "7 0 *", "fin"], "output": "6\n0"}
+            ],
+            "require": [
+              {
+                "any": ["except ZeroDivisionError"],
+                "message": "Atrapá la división por cero con except ZeroDivisionError."
+              },
+              {"any": ["except ValueError"], "message": "Atrapá los números inválidos con except ValueError."}
+            ],
+            "solution": [
+              "linea = input()",
+              "while linea != 'fin':",
+              "    a, b, op = linea.split()",
+              "    try:",
+              "        a = int(a)",
+              "        b = int(b)",
+              "        if op == '+':",
+              "            print(a + b)",
+              "        elif op == '-':",
+              "            print(a - b)",
+              "        elif op == '*':",
+              "            print(a * b)",
+              "        elif op == '/':",
+              "            print(a / b)",
+              "        else:",
+              "            print('Error: operador desconocido')",
+              "    except ValueError:",
+              "        print('Error: número inválido')",
+              "    except ZeroDivisionError:",
+              "        print('Error: división por cero')",
+              "    linea = input()"
+            ]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "El archivo hechizos.log tiene una línea por hechizo: nombre;energía. Sumá la energía de las líneas válidas. Si a una línea le falta el ; (o le sobra), o la energía no es un entero, salteala e imprimí Línea N inválida (N empieza en 1). Al final imprimí Energía total: X. Si el archivo no existe, imprimí Sin registro.",
+            "starter": ["total = 0", ""],
+            "tests": [
+              {
+                "files": {"hechizos.log": "luz;10\nfuego;x\nagua;5\nrota\n"},
+                "output": "Línea 2 inválida\nLínea 4 inválida\nEnergía total: 15"
+              },
+              {"files": {"hechizos.log": "a;1\nb;2\n"}, "output": "Energía total: 3"},
+              {"files": {}, "output": "Sin registro"},
+              {"files": {"hechizos.log": "solo;-4\n;;\n"}, "output": "Línea 2 inválida\nEnergía total: -4"}
+            ],
+            "require": [
+              {
+                "any": ["FileNotFoundError"],
+                "message": "Atrapá el FileNotFoundError por si el archivo no existe."
+              }
+            ],
+            "solution": [
+              "total = 0",
+              "try:",
+              "    with open('hechizos.log') as f:",
+              "        for n, linea in enumerate(f, start=1):",
+              "            try:",
+              "                nombre, energia = linea.strip().split(';')",
+              "                total += int(energia)",
+              "            except ValueError:",
+              "                print(f'Línea {n} inválida')",
+              "    print(f'Energía total: {total}')",
+              "except FileNotFoundError:",
+              "    print('Sin registro')"
+            ]
+          }
+        ]
+      }
     },
     {
       "id": 8,
       "name": "Cámara de los Espejos",
       "color": "#3A8A9A",
-      "status": "designed",
+      "status": "playable",
       "topics": ["recursión"],
+      "story": "Una cámara de espejos que se reflejan entre sí, cada reflejo más chico que el anterior. En el centro espera el Espejo Infinito, que se llama a sí mismo sin parar.",
       "boss": "espejo_infinito",
-      "levels": []
+      "section_map": {
+        "player_start": [2, 5],
+        "houses": [
+          {"id": "w8_l1", "kind": "level", "pos": [5, 3]},
+          {"id": "w8_l2", "kind": "level", "pos": [8, 6]},
+          {"id": "w8_l3", "kind": "level", "pos": [11, 3]},
+          {"id": "w8_l4", "kind": "level", "pos": [14, 6]},
+          {"id": "w8_l5", "kind": "level", "pos": [17, 3]},
+          {"id": "w8_mini", "kind": "minigame", "pos": [20, 6]},
+          {"id": "w8_boss", "kind": "boss", "pos": [23, 4]}
+        ]
+      },
+      "levels": [
+        {
+          "id": "w8_l1",
+          "title": "La escalera de espejos",
+          "mechanic": "frasco",
+          "story": "suma(n) se llama a sí misma con un número más chico hasta llegar al caso base, n == 0. El caldero pide 15.",
+          "given": ["def suma(n):", "    if n == 0:", "        return 0", "    return n + suma(n - 1)"],
+          "goal": {"value": 15, "type": "int"},
+          "jars": [{"name": "a", "accepts": "int"}],
+          "tokens": [
+            {"value": 5, "type": "int"},
+            {"value": 4, "type": "int"},
+            {"value": -1, "type": "int"},
+            {"value": "5", "type": "str"},
+            {"value": 15, "type": "int"}
+          ],
+          "operators": [],
+          "expression": "suma(a)",
+          "solution_any": [{"a": 5}],
+          "hints": [
+            "suma(3) es 3 + suma(2), que es 2 + suma(1), que es 1 + suma(0), y suma(0) es 0.",
+            "suma(n) da 1 + 2 + ... + n. ¿Qué n da 15?",
+            "suma(5) = 5 + 4 + 3 + 2 + 1 = 15. Con -1 nunca llega al caso base: el espejo se repite para siempre."
+          ]
+        },
+        {
+          "id": "w8_l2",
+          "title": "El reflejo al revés",
+          "mechanic": "frasco",
+          "story": "espejo(s) da vuelta un texto: deja la primera letra para el final y da vuelta el resto. El caldero pide 'aloh!'.",
+          "given": ["def espejo(s):", "    if len(s) <= 1:", "        return s", "    return espejo(s[1:]) + s[0]"],
+          "goal": {"value": "aloh!", "type": "str"},
+          "jars": [{"name": "a", "accepts": "str"}, {"name": "b", "accepts": "str"}],
+          "tokens": [
+            {"value": "hola", "type": "str"},
+            {"value": "!", "type": "str"},
+            {"value": "aloh", "type": "str"},
+            {"value": "?", "type": "str"}
+          ],
+          "operators": [],
+          "expression": "espejo(a) + b",
+          "solution_any": [{"a": "hola", "b": "!"}],
+          "hints": [
+            "espejo('ab') es espejo('b') + 'a', o sea 'ba'.",
+            "espejo da vuelta lo que le pases. ¿Qué palabra, dada vuelta, es 'aloh'?",
+            "espejo('hola') da 'aloh'; después sumale '!'."
+          ]
+        },
+        {
+          "id": "w8_l3",
+          "title": "El factorial reflejado",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "En la cámara cada espejo refleja al anterior, un poco más chico. Así funciona el factorial: 5! es 5 por 4!.",
+          "task": "Escribí la función recursiva factorial(n): el factorial de 0 es 1, y el de n es n * factorial(n - 1). El programa lee n (entre 0 y 20) e imprime n! = resultado. No vale usar for ni while.",
+          "starter": ["def factorial(n):", "    pass", "", "n = int(input())", "print(f'{n}! = {factorial(n)}')"],
+          "tests": [
+            {"inputs": ["5"], "output": "5! = 120"},
+            {"inputs": ["0"], "output": "0! = 1"},
+            {"inputs": ["1"], "output": "1! = 1"},
+            {"inputs": ["20"], "output": "20! = 2432902008176640000"}
+          ],
+          "require": [
+            {
+              "any": ["factorial(n - 1)", "factorial(n-1)"],
+              "message": "factorial tiene que llamarse a sí misma con n - 1."
+            }
+          ],
+          "forbid": [{"any": ["for ", "while "], "message": "Esta vez nada de bucles: resolvelo con recursión."}],
+          "solution": [
+            "def factorial(n):",
+            "    if n == 0:",
+            "        return 1",
+            "    return n * factorial(n - 1)",
+            "",
+            "n = int(input())",
+            "print(f'{n}! = {factorial(n)}')"
+          ],
+          "hints": [
+            "Toda función recursiva necesita un caso base que no se llame a sí misma: si n == 0, devolvé 1.",
+            "Para cualquier otro n, devolvé n * factorial(n - 1): el problema se achica en cada llamada.",
+            "if n == 0: return 1, y si no, return n * factorial(n - 1)."
+          ]
+        },
+        {
+          "id": "w8_l4",
+          "title": "Binario de espejo",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Los espejos solo entienden dos colores: luz y sombra, 1 y 0. Hay que traducirles los números.",
+          "task": "Escribí binario(n) recursiva que devuelva el número n en binario como texto. El último dígito es n % 2 y lo de antes es binario(n // 2). Leé n e imprimí su binario (6 da 110). Sin bucles y sin bin().",
+          "starter": ["def binario(n):", "    pass", "", "n = int(input())", "print(binario(n))"],
+          "tests": [
+            {"inputs": ["6"], "output": "110"},
+            {"inputs": ["1"], "output": "1"},
+            {"inputs": ["0"], "output": "0"},
+            {"inputs": ["37"], "output": "100101"},
+            {"inputs": ["1024"], "output": "10000000000"}
+          ],
+          "forbid": [
+            {"any": ["for ", "while "], "message": "Esta vez nada de bucles: resolvelo con recursión."},
+            {"any": ["bin("], "message": "bin() ya lo hace solo: la idea es que lo escribas vos."}
+          ],
+          "solution": [
+            "def binario(n):",
+            "    if n < 2:",
+            "        return str(n)",
+            "    return binario(n // 2) + str(n % 2)",
+            "",
+            "n = int(input())",
+            "print(binario(n))"
+          ],
+          "hints": [
+            "Caso base: si n es 0 o 1, su binario es str(n).",
+            "Si no, el binario de n es el binario de n // 2 seguido del último dígito, str(n % 2).",
+            "return binario(n // 2) + str(n % 2)"
+          ]
+        },
+        {
+          "id": "w8_l5",
+          "title": "Las torres de Hanoi",
+          "mechanic": "codigo",
+          "xp": 80,
+          "story": "Tres torres de espejo y una pila de discos. Hay que mover todos los discos de la torre A a la C sin poner nunca un disco grande sobre uno chico.",
+          "task": "Escribí hanoi(n, origen, auxiliar, destino) recursiva que imprima cada movimiento con el formato Mover disco N de X a Y. El programa lee n y llama a hanoi(n, 'A', 'B', 'C').",
+          "starter": [
+            "def hanoi(n, origen, auxiliar, destino):",
+            "    pass",
+            "",
+            "n = int(input())",
+            "hanoi(n, 'A', 'B', 'C')"
+          ],
+          "tests": [
+            {"inputs": ["1"], "output": "Mover disco 1 de A a C"},
+            {
+              "inputs": ["2"],
+              "output": "Mover disco 1 de A a B\nMover disco 2 de A a C\nMover disco 1 de B a C"
+            },
+            {
+              "inputs": ["3"],
+              "output": "Mover disco 1 de A a C\nMover disco 2 de A a B\nMover disco 1 de C a B\nMover disco 3 de A a C\nMover disco 1 de B a A\nMover disco 2 de B a C\nMover disco 1 de A a C"
+            },
+            {
+              "inputs": ["4"],
+              "output": "Mover disco 1 de A a B\nMover disco 2 de A a C\nMover disco 1 de B a C\nMover disco 3 de A a B\nMover disco 1 de C a A\nMover disco 2 de C a B\nMover disco 1 de A a B\nMover disco 4 de A a C\nMover disco 1 de B a C\nMover disco 2 de B a A\nMover disco 1 de C a A\nMover disco 3 de B a C\nMover disco 1 de A a B\nMover disco 2 de A a C\nMover disco 1 de B a C"
+            }
+          ],
+          "forbid": [{"any": ["for ", "while "], "message": "Esta vez nada de bucles: resolvelo con recursión."}],
+          "solution": [
+            "def hanoi(n, origen, auxiliar, destino):",
+            "    if n == 0:",
+            "        return",
+            "    hanoi(n - 1, origen, destino, auxiliar)",
+            "    print(f'Mover disco {n} de {origen} a {destino}')",
+            "    hanoi(n - 1, auxiliar, origen, destino)",
+            "",
+            "n = int(input())",
+            "hanoi(n, 'A', 'B', 'C')"
+          ],
+          "hints": [
+            "Con cero discos no hay nada que hacer (caso base). Para n discos, primero mové los n - 1 de arriba de origen a auxiliar.",
+            "Después mové el disco n de origen a destino (imprimilo) y, por último, los n - 1 discos de auxiliar a destino.",
+            "hanoi(n - 1, origen, destino, auxiliar), el print, y hanoi(n - 1, auxiliar, origen, destino)."
+          ]
+        }
+      ],
+      "minigame": {
+        "id": "w8_mini",
+        "kind": "bola_de_cristal",
+        "title": "Bola de cristal",
+        "rounds": [
+          {
+            "code": [
+              "def eco(n):",
+              "    if n == 0:",
+              "        return",
+              "    print(n, end='')",
+              "    eco(n - 1)",
+              "eco(3)"
+            ],
+            "options": ["321", "123", "RecursionError"]
+          },
+          {
+            "code": [
+              "def eco(n):",
+              "    if n == 0:",
+              "        return",
+              "    eco(n - 1)",
+              "    print(n, end='')",
+              "eco(3)"
+            ],
+            "options": ["321", "123", "3"]
+          },
+          {
+            "code": ["def cuenta(n):", "    print(n, end='')", "    cuenta(n - 1)", "cuenta(3)"],
+            "options": ["3210", "321", "RecursionError"]
+          },
+          {
+            "code": [
+              "llamadas = 0",
+              "def f(n):",
+              "    global llamadas",
+              "    llamadas += 1",
+              "    if n <= 1:",
+              "        return n",
+              "    return f(n - 1) + f(n - 2)",
+              "f(4)",
+              "print(llamadas)"
+            ],
+            "options": ["4", "5", "9"]
+          }
+        ]
+      },
+      "boss_fight": {
+        "id": "w8_boss",
+        "enemy": "espejo_infinito",
+        "title": "El Espejo Infinito",
+        "taunt": "El Espejo Infinito se refleja a sí mismo sin fin. Encontrá el caso base de cada reflejo para romperlo.",
+        "victory": "El Espejo Infinito se parte en mil reflejos que por fin terminan. ¡Dominaste el Grimorio! Pythoria vuelve a estar a salvo, aprendiz.",
+        "rounds": [
+          {
+            "mechanic": "frasco",
+            "given": ["def eco(n):", "    if n <= 0:", "        return ''", "    return str(n) + eco(n - 2)"],
+            "goal": {"value": "531", "type": "str"},
+            "jars": [{"name": "a", "accepts": "int"}],
+            "tokens": [
+              {"value": 5, "type": "int"},
+              {"value": 6, "type": "int"},
+              {"value": 3, "type": "int"},
+              {"value": "5", "type": "str"}
+            ],
+            "operators": [],
+            "expression": "eco(a)",
+            "solution_any": [{"a": 5}]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "El Espejo rompió este hechizo: tiene que imprimir la suma de los dígitos de un número de forma recursiva, pero se refleja para siempre. Arreglá el caso base (sin bucles).",
+            "starter": [
+              "def suma_digitos(n):",
+              "    if n == 10:",
+              "        return n",
+              "    return n % 10 + suma_digitos(n // 10)",
+              "",
+              "n = int(input())",
+              "print(suma_digitos(n))"
+            ],
+            "tests": [
+              {"inputs": ["1234"], "output": "10"},
+              {"inputs": ["7"], "output": "7"},
+              {"inputs": ["9999"], "output": "36"},
+              {"inputs": ["10"], "output": "1"}
+            ],
+            "forbid": [{"any": ["for ", "while "], "message": "Nada de bucles: arreglá la recursión."}],
+            "solution": [
+              "def suma_digitos(n):",
+              "    if n < 10:",
+              "        return n",
+              "    return n % 10 + suma_digitos(n // 10)",
+              "",
+              "n = int(input())",
+              "print(suma_digitos(n))"
+            ]
+          },
+          {
+            "mechanic": "codigo",
+            "task": "La variable carpeta es un diccionario: cada clave es un nombre; si el valor es un número es un archivo (su tamaño), y si es otro diccionario es una subcarpeta. Escribí tamano(c) recursiva que devuelva el tamaño total, contando todo lo que hay adentro de las subcarpetas. El programa imprime Total: N.",
+            "starter": [
+              "def tamano(c):",
+              "    total = 0",
+              "    # sumá archivos y subcarpetas",
+              "    return total",
+              "",
+              "print(f'Total: {tamano(carpeta)}')"
+            ],
+            "tests": [
+              {
+                "vars": {"carpeta": {"a.txt": 3, "fotos": {"b.png": 10, "c.png": 5}, "d.txt": 1}},
+                "output": "Total: 19"
+              },
+              {"vars": {"carpeta": {"x": 7}}, "output": "Total: 7"},
+              {
+                "vars": {"carpeta": {"vacia": {}, "s": {"t": {"u": {"v.txt": 4}}}, "w": 2}},
+                "output": "Total: 6"
+              }
+            ],
+            "require": [
+              {
+                "any": ["isinstance", "type("],
+                "message": "Para saber si un valor es una subcarpeta, preguntá isinstance(valor, dict)."
+              }
+            ],
+            "solution": [
+              "def tamano(c):",
+              "    total = 0",
+              "    for nombre, valor in c.items():",
+              "        if isinstance(valor, dict):",
+              "            total += tamano(valor)",
+              "        else:",
+              "            total += valor",
+              "    return total",
+              "",
+              "print(f'Total: {tamano(carpeta)}')"
+            ]
+          }
+        ]
+      }
     }
   ],
   "world_map": {

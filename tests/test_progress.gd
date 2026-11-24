@@ -45,4 +45,9 @@ func test_mundos() -> void:
 	check_eq(GameState.frontier_world(), 2, "frontera en mundo 2")
 	GameState.completed.append("w3_boss")
 	check(GameState.is_world_unlocked(4), "mundo 4 desbloqueado por datos")
-	check_eq(GameState.frontier_world(), 2, "mundo 4 sin casitas no es frontera (falta w2_boss)")
+	check_eq(GameState.frontier_world(), 4, "el mundo 4 tiene casitas: es la frontera")
+	var w4 := ContentDB.get_world(4)
+	var saved: Dictionary = w4["section_map"]
+	w4.erase("section_map")
+	check_eq(GameState.frontier_world(), 2, "un mundo sin casitas no es frontera (falta w2_boss)")
+	w4["section_map"] = saved

@@ -39,17 +39,20 @@ func test_json_carga() -> void:
 	check(ContentDB.load_error == "", "error al cargar: " + ContentDB.load_error)
 	check_eq(ContentDB.world_count(), 8, "8 mundos")
 	check_eq(ContentDB.world_map_nodes().size(), 8, "8 nodos en el mapa")
-	for id in [1, 2, 3]:
+	for id in range(1, 9):
 		var w := ContentDB.get_world(id)
 		check_eq((w["levels"] as Array).size(), 5, "mundo %d tiene 5 niveles" % id)
+		check_eq(ContentDB.house_ids(id).size(), 7, "mundo %d tiene 7 casitas" % id)
+		check_eq(str(w.get("boss", "")), str(w["boss_fight"].get("enemy", "")), "mundo %d: boss y enemigo coinciden" % id)
+		check(UI.tex(str(w["boss_fight"]["enemy"])) != null, "mundo %d: falta el sprite del boss" % id)
 		check(w.has("minigame") and w.has("boss_fight"), "mundo %d tiene minijuego y boss" % id)
 
 
 func test_ids_de_casitas_tienen_contenido() -> void:
-	for world in [1, 2, 3]:
+	for world in range(1, 9):
+		check(ContentDB.world_has_section(world), "el mundo %d tiene casitas" % world)
 		for id: String in ContentDB.house_ids(world):
 			check(not ContentDB.get_content(id).is_empty(), "%s no tiene contenido" % id)
-	check(not ContentDB.world_has_section(4), "el mundo 4 todavía no tiene casitas")
 
 
 func test_niveles_bien_formados() -> void:
@@ -80,7 +83,7 @@ func test_frascos_y_cruces_resolubles() -> void:
 			if FrascoLogic.needs_operator_choice(p):
 				check(FrascoLogic.operators(p).has(s["op"]), "%s: el operador %s no está disponible" % [name, s["op"]])
 			check_eq(FrascoLogic.check(p, s["values"], s["op"])["status"], "success", "%s con %s" % [name, s])
-	check(count >= 14, "se probaron las soluciones (%d)" % count)
+	check(count >= 30, "se probaron las soluciones (%d)" % count)
 
 
 func test_programas_resolubles() -> void:
@@ -95,12 +98,12 @@ func test_programas_resolubles() -> void:
 		check_eq(r["status"], "success", "%s: la solución pasa (%s)" % [name, r["message"]])
 		var starter := CodeLogic.check(p, CodeLogic.starter(p))
 		check(starter["status"] != "success", "%s: el código inicial no debería pasar solo" % name)
-	check(count >= 9, "hay ejercicios de escribir código (%d)" % count)
+	check(count >= 34, "hay ejercicios de escribir código (%d)" % count)
 
 
 ## Regla de diseño: en cada mundo jugable, alrededor de la mitad de los desafíos es escribir código.
 func test_mitad_escribir_codigo() -> void:
-	for id in [1, 2, 3]:
+	for id in range(1, 9):
 		var w := ContentDB.get_world(id)
 		var total := 0
 		var code := 0
@@ -203,17 +206,28 @@ func test_minijuego_resoluble() -> void:
 		check_eq(res["status"], "success", "ronda %s: %s" % [r["code"], res["message"]])
 
 
+## Minijuegos de todos los mundos de un tipo.
+func _minis(kind: String) -> Array[Dictionary]:
+	var out: Array[Dictionary] = []
+	for w: Dictionary in ContentDB.worlds():
+		if str(w.get("minigame", {}).get("kind", "")) == kind:
+			out.append(w["minigame"])
+	return out
+
+
 func test_bola_de_cristal_resoluble() -> void:
-	var mini := ContentDB.get_content("w2_mini")
-	check_eq(mini["kind"], "bola_de_cristal", "tipo de minijuego")
-	for r: Dictionary in mini["rounds"]:
+	var all_rounds: Array = []
+	for m: Dictionary in _minis("bola_de_cristal"):
+		all_rounds.append_array(m["rounds"])
+	check(all_rounds.size() >= 8, "bolas de cristal en los mundos 2 y 8")
+	for r: Dictionary in all_rounds:
 		var answer := MinigameLogic.prediction_answer(r)
 		var matches := 0
 		for opt: Variant in r["options"]:
 			if str(opt) == answer:
 				matches += 1
 		check_eq(matches, 1, "exactamente una opción correcta en %s (pasa: %s)" % [r["code"], answer])
-	var rounds: Array = mini["rounds"]
+	var rounds: Array = ContentDB.get_content("w2_mini")["rounds"]
 	check_eq(MinigameLogic.prediction_answer(rounds[0]), "cero", "cortocircuito: no evalúa y")
 	check_eq(MinigameLogic.prediction_answer(rounds[2]), "TypeError", "input() es texto")
 	check_eq(MinigameLogic.prediction_answer(rounds[3]), "Fizz", "el orden de los elif importa")
@@ -237,9 +251,12 @@ func test_bucle_infinito_es_el_ouroboros() -> void:
 
 
 func test_duelo_de_bugs_resoluble() -> void:
+	var all_rounds: Array = []
+	for m: Dictionary in _minis("duelo_de_bugs"):
+		all_rounds.append_array(m["rounds"])
+	check(all_rounds.size() >= 8, "duelos en los mundos 3 y 7")
 	var mini := ContentDB.get_content("w3_mini")
-	check_eq(mini["kind"], "duelo_de_bugs", "tipo de minijuego")
-	for r: Dictionary in mini["rounds"]:
+	for r: Dictionary in all_rounds:
 		var buggy := MinigameLogic.run_duel(r, r["code"])
 		check(not (buggy["ok"] and CodeLogic.normalize(buggy["output"]) == CodeLogic.normalize(r["output"])), "el código con bug no debería andar: %s" % [r["code"]])
 		var good := 0
@@ -267,3 +284,90 @@ func test_mundo_3_trampas() -> void:
 	check_eq(r["status"], "success", "for/else también vale")
 	r = CodeLogic.check(boss, "clave = 'abracadabra'\nacerto = False\nfor intento in range(1, 4):\n    if input() == clave and not acerto:\n        print(f'Acceso concedido en el intento {intento}')\n        acerto = True\nif not acerto:\n    print('Bloqueado')")
 	check_eq(r["status"], "missing", "sin break el búho lo pide")
+
+
+func test_ordena_el_conjuro() -> void:
+	var minis := _minis("ordena_el_conjuro")
+	check_eq(minis.size(), 2, "ordena el conjuro en los mundos 4 y 6")
+	for m: Dictionary in minis:
+		for r: Dictionary in m["rounds"]:
+			check_eq(MinigameLogic.check_order(r, r["lines"])["status"], "success", "el orden correcto anda: %s" % [r["lines"]])
+			var mixed := MinigameLogic.shuffled_lines(r)
+			check_eq(mixed.size(), (r["lines"] as Array).size() + (r.get("extra", []) as Array).size(), "están todas las líneas")
+			check_eq(mixed, MinigameLogic.shuffled_lines(r), "siempre la misma mezcla")
+			check(mixed.slice(0, (r["lines"] as Array).size()) != r["lines"], "no viene ya ordenado: %s" % [r["lines"]])
+	var r4: Dictionary = ContentDB.get_content("w4_mini")["rounds"][1]
+	var with_extra: Array = ["total = 0", "for n in [4, 8, 15]:", "    total += n", "    print(total)"]
+	check_eq(MinigameLogic.check_order(r4, with_extra)["status"], "wrong", "la línea de sobra imprime de más")
+	check_eq(MinigameLogic.check_order(r4, [])["status"], "incomplete", "conjuro vacío")
+	var r6: Dictionary = ContentDB.get_content("w6_mini")["rounds"][0]
+	var call_first: Array = ["print(area(3, 4))", "def area(base, altura):", "    return base * altura"]
+	check_eq(MinigameLogic.check_order(r6, call_first)["creature"], "fantasma_sin_nombre", "llamar antes de definir es NameError")
+
+
+func test_trivia_del_aula() -> void:
+	var minis := _minis("trivia_del_aula")
+	check_eq(minis.size(), 1, "trivia en el mundo 5")
+	for r: Dictionary in minis[0]["rounds"]:
+		var matches := 0
+		for opt: Variant in r["options"]:
+			if str(opt) == str(r["answer"]):
+				matches += 1
+		check_eq(matches, 1, "una sola respuesta correcta: %s" % r["question"])
+		check(str(r.get("explain", "")) != "" and str(r.get("hint", "")) != "", "explicación y pista: %s" % r["question"])
+		if r.get("verify", false):
+			check_eq(MinigameLogic.prediction_answer(r), str(r["answer"]), "la respuesta sale de correr el código")
+		check_eq(MinigameLogic.check_trivia(r, str(r["answer"]))["status"], "success", "acertar")
+	var wrong := MinigameLogic.check_trivia(minis[0]["rounds"][0], "{'a': 1}")
+	check_eq(wrong["status"], "wrong", "errar")
+	check(not str(wrong["message"]).contains("pisa"), "al errar no se revela la explicación")
+
+
+func test_frascos_con_valores_fijos() -> void:
+	var l1 := ContentDB.get_content("w4_l1")
+	check_eq(Array(FrascoLogic.code_lines(l1, {"inicio": 4}, ""))[0], "palabra = 'pergamino'", "el código en vivo muestra lo fijo")
+	check_eq(FrascoLogic.check(l1, {"inicio": 4, "fin": 8}, "")["message"], "Obtuviste 'amin', pero el caldero pedía 'amino'.", "el fin no se incluye")
+	check_eq(FrascoLogic.check(l1, {"inicio": "4", "fin": 9}, "")["creature"], "quimera_tipos", "índice de texto")
+	var l2 := ContentDB.get_content("w4_l2")
+	check_eq(FrascoLogic.goal_type(l2), "list", "meta de tipo lista")
+	check_eq(FrascoLogic.check(l2, {"inicio": 1, "fin": 4, "paso": -2}, "")["message"], "Obtuviste [], pero el caldero pedía [50, 30].", "hacia atrás desde la izquierda da vacío")
+	var boss4: Dictionary = ContentDB.get_content("w4_boss")["rounds"][0]
+	check_eq(FrascoLogic.check(boss4, {"a": 4, "b": 4}, "")["creature"], "espectro_indice", "IndexError trae al Espectro")
+	var w5 := ContentDB.get_content("w5_l1")
+	var r := FrascoLogic.check(w5, {"a": "pocion", "b": "Pluma"}, "")
+	check_eq(r["creature"], "archivista_caos", "KeyError trae al Archivista")
+	check_eq(r["detail"], "KeyError: 'Pluma'", "detalle del KeyError")
+	check_eq(FrascoLogic.check(ContentDB.get_content("w5_l2"), {"a": "Linus", "b": "Hedy"}, "")["message"], "Obtuviste 4, pero el caldero pedía 3.", "dos nombres nuevos")
+	check_eq(FrascoLogic.check(ContentDB.get_content("w6_l2"), {"a": 8}, "")["message"], "Obtuviste 23, pero el caldero pedía 18.", "la x de afuera no cambia")
+	check_eq(FrascoLogic.check(ContentDB.get_content("w7_l2"), {"x": 2, "y": "1"}, "")["message"], "Obtuviste 'c-tipo', pero el caldero pedía 'c-fuera'.", "except TypeError")
+	check_eq(FrascoLogic.check(ContentDB.get_content("w8_l1"), {"a": -1}, "")["creature"], "espejo_infinito", "sin caso base: Espejo Infinito")
+	check_eq(FrascoLogic.check(ContentDB.get_content("w7_boss")["rounds"][0], {"a": "-3", "b": "-2"}, "")["message"], "Obtuviste 1, pero el caldero pedía 6.", "raise convierte los negativos en -1")
+
+
+func test_codigo_mundos_4_a_8() -> void:
+	var w4 := ContentDB.get_content("w4_l3")
+	check_eq(CodeLogic.check(w4, "texto = input()\nprint(3)\nprint(465)\nprint(300)")["status"], "missing", "pide split")
+	var w5 := ContentDB.get_content("w5_l3")
+	var r := CodeLogic.check(w5, "palabras = input().split()\nconteo = {}\nfor p in palabras:\n    conteo[p] += 1")
+	check_eq(r["creature"], "archivista_caos", "contar sin inicializar: KeyError")
+	check(str(r["message"]).contains(".get()"), "la explicación sugiere get")
+	check_eq(CodeLogic.check(w5, "palabras = input().split()\nconteo = {}\nfor p in palabras:\n    conteo[p] = palabras.count(p)\nfor p in conteo:\n    print(f'{p}: {conteo[p]}')")["status"], "missing", "prohibido .count()")
+	var w6 := ContentDB.get_content("w6_l5")
+	r = CodeLogic.check(w6, CodeLogic.starter(w6))
+	check_eq(r["status"], "wrong", "print en vez de return")
+	check(str(r["message"]).contains("None"), "se ve el None")
+	var w7 := ContentDB.get_content("w7_l4")
+	r = CodeLogic.check(w7, "with open('notas.txt') as f:\n    notas = [int(l.split(',')[1]) for l in f]\nprint(f'Promedio: {sum(notas) / len(notas):.2f}')\n# FileNotFoundError")
+	check_eq(r["creature"], "hechizo_rebotado", "archivo que no existe sin atrapar")
+	check_eq(r["failed_case"], 2, "falla en el caso sin archivo")
+	check_eq(CodeLogic.describe_setup(CodeLogic.tests(w7)[2]), "(no hay ningún archivo)", "se muestra que no hay archivo")
+	var w7l5 := ContentDB.get_content("w7_l5")
+	var no_upper := "n = int(input())\nwith open('registro.txt', 'w') as f:\n    for i in range(n):\n        f.write(input() + '\\n')\nprint(f'Líneas en el registro: {n}')"
+	r = CodeLogic.check(w7l5, no_upper)
+	check_eq(r["title"], "El archivo no quedó bien", "files_out revisa el archivo")
+	var w8 := ContentDB.get_content("w8_l3")
+	check_eq(CodeLogic.check(w8, "def factorial(n):\n    r = 1\n    for i in range(1, n + 1):\n        r *= i\n    return r # factorial(n - 1)\nn = int(input())\nprint(f'{n}! = {factorial(n)}')")["status"], "missing", "sin bucles")
+	var boss8: Dictionary = ContentDB.get_content("w8_boss")["rounds"][1]
+	check_eq(CodeLogic.check(boss8, CodeLogic.starter(boss8))["creature"], "espejo_infinito", "caso base roto: RecursionError")
+	var carpeta: Dictionary = ContentDB.get_content("w8_boss")["rounds"][2]
+	check(CodeLogic.describe_setup(CodeLogic.tests(carpeta)[1]) == "carpeta = {'x': 7}", "las variables del caso se muestran")

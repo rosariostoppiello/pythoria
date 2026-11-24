@@ -54,7 +54,12 @@ func test_avance_al_vencer_boss() -> void:
 func test_mundos_sin_contenido() -> void:
 	for id in range(1, 4):
 		GameState.completed.append("w%d_boss" % id)
+	# Todos los mundos tienen casitas: se le sacan al 4 para probar "Próximamente".
+	var w4 := ContentDB.get_world(4)
+	var saved: Dictionary = w4["section_map"]
+	w4.erase("section_map")
 	var map: Control = await _open()
 	check_eq(map.node_state(4), "soon", "mundo 4 desbloqueado pero sin casitas")
 	check(not map.can_enter(4), "no se entra a un mundo sin casitas")
 	map.queue_free()
+	w4["section_map"] = saved

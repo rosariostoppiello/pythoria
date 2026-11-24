@@ -27,11 +27,15 @@ func test_parametro_de_la_url() -> void:
 func test_abre_todo_lo_que_tiene_contenido() -> void:
 	check_eq(GameState.house_state("w3_boss"), "locked", "sin revisor, el Ouroboros está cerrado")
 	GameState.set_reviewer(true)
-	for world in [1, 2, 3]:
+	for world in range(1, 9):
 		check(GameState.is_world_unlocked(world), "mundo %d abierto" % world)
 		for id: String in ContentDB.house_ids(world):
 			check_eq(GameState.house_state(id), "open", "%s abierta" % id)
-	check(not GameState.is_world_unlocked(4), "el mundo 4 sin casitas sigue cerrado")
+	var w4 := ContentDB.get_world(4)
+	var saved: Dictionary = w4["section_map"]
+	w4.erase("section_map")
+	check(not GameState.is_world_unlocked(4), "un mundo sin casitas sigue cerrado")
+	w4["section_map"] = saved
 
 
 func test_no_cambia_el_progreso() -> void:

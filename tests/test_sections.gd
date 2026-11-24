@@ -14,7 +14,7 @@ func after_each() -> void:
 
 
 func test_mapas_de_mundos_jugables() -> void:
-	for id in [1, 2, 3]:
+	for id in range(1, 9):
 		SceneManager.world_id = id
 		var map: Node2D = load("res://scenes/section_map/section_map.tscn").instantiate()
 		tree.root.add_child(map)
@@ -27,6 +27,10 @@ func test_mapas_de_mundos_jugables() -> void:
 			var cell: Vector2i = map.layout.houses[i]["tile"]
 			var pos: Array = ContentDB.get_house(h.house_id)["pos"]
 			check_eq(cell, Vector2i(int(pos[0]), int(pos[1])), "posición de %s" % h.house_id)
+		# Cada puerta se alcanza caminando desde el inicio.
+		for hd: Dictionary in map.layout.houses:
+			check(map.layout.path.has(hd["door"]), "la puerta de %s está sobre el camino" % hd["id"])
+			check(map.layout.is_walkable(hd["door"]), "la puerta de %s se puede pisar" % hd["id"])
 		map.queue_free()
 	await tree.process_frame
 
