@@ -132,8 +132,69 @@ Se abre al vencer al Guardián. Para llegar rápido, agregá `"w2_boss"` (y `"w1
 
 ## 7c. Mundos 4 a 8
 
-- Todavía no tienen casitas: en el mapa se ven bloqueados y, si se desbloquean, como "Próximamente".
-- La pantalla "Próximamente" con **Completar (debug)** sigue existiendo para los mundos que tengan casitas sin contenido.
+Para llegar rápido usá el **modo revisor** (Opciones, o `?revisor=1` en la web): abre todos los mundos y todas las casitas. También podés agregar los `wN_boss` anteriores a `completed` en `save.json`. Al vencer al boss del mundo 3, el aprendiz camina al mundo 4 (ya no dice "Próximamente").
+
+### Mundo 4: Biblioteca de los Pergaminos (textos, listas, tuplas, slicing)
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – El pergamino cortado (Frasco) | `palabra[4:8]` y la ficha `'4'` | El código en vivo muestra `palabra = 'pergamino'` arriba. `[4:8]` da `'amin'` (el fin no se incluye); `'4'` trae a la Quimera. `[4:9]` o `[-5:9]` → éxito. |
+| 2 – Saltos hacia atrás (Frasco) | `tomos[1:4:-2]` | El caldero pide `[50, 30]` (list). Hacia atrás desde la izquierda da `[]`. `[4:1:-2]` o `[-1:0:-2]` → éxito. |
+| 3 – El inventario de la estantería (código) | Sin `split()` | El búho lo pide. Con split, `int()` y `append` → éxito. |
+| 4 – El palíndromo del espejo (código) | Comparar sin `lower()` | Falla "Anita lava la tina". Con `[::-1]` y `replace(' ', '')` → éxito. |
+| 5 – El pergamino más antiguo (código) | Usar `<=` al buscar el mínimo | Falla el caso del empate (gana el primero). |
+| Minijuego – Ordena el conjuro (4 rondas) | Tocá las líneas sueltas en orden | Pasan a "Tu conjuro"; tocando una del conjuro vuelve. En la ronda 2 sobra un `print` con sangría: si lo usás, imprime de más. |
+| Boss – Espectro del Índice | Ronda 1: ficha `4` en `a`. Ronda 2: arreglá el `range(len(...) + 1)`. Ronda 3: rotación con `k % len(palabras)` | El índice 4 trae al **Espectro del Índice** (IndexError). Sin `%`, el búho lo pide. |
+
+### Mundo 5: Salón de las Runas (diccionarios, sets, anidados)
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – La runa justa (Frasco) | La ficha `'Pluma'` | Aparece el **Archivista del Caos** con `KeyError: 'Pluma'`. `'pocion'` + `'pluma'` → éxito. |
+| 2 – Nombres sin repetir (Frasco) | `'Linus'` y `'Hedy'` | Da 4. Con `'Ada'` y un nombre nuevo → 3. |
+| 3 – El contador de runas (código) | `conteo[p] += 1` sin inicializar | Archivista con la sugerencia de usar `.get()`. Usar `.count()` está prohibido (el búho avisa). |
+| 4 – Aprendices en común (código) | Imprimir el set sin `sorted` | Falla el orden. Con `&`, `-`, `sorted` y `(nadie)` → éxito. |
+| 5 – El libro de calificaciones (código) | `notas[nombre].append(...)` sin crear la lista | KeyError. Con `if nombre not in notas: notas[nombre] = []` → éxito. |
+| Minijuego – Trivia del aula (5 preguntas) | Elegí una respuesta equivocada | Sale el búho con una pista (sin revelar la respuesta). Acertar las 5 da el minijuego. |
+| Boss – Archivista del Caos | Ronda 1: `biblioteca['pociones'][2]`. Ronda 2: arreglá el contador con `.get()`. Ronda 3: inventario y receta | |
+
+### Mundo 6: Taller de Embrujos (funciones)
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – El escudo con valor por defecto (Frasco) | Cualquier par que sume 7 | La función `escudo` se ve en el código en vivo. Hay varias respuestas. |
+| 2 – La x de adentro y la de afuera (Frasco) | La ficha `8` | Da 23: la `x` de afuera sigue en 10. Con 3 → éxito. |
+| 3 – Primos del taller (código) | Imprimir adentro de `es_primo` | El búho pide `return`. |
+| 4 – El hechizo que devuelve tres cosas (código) | `return min, max, promedio` y desarmarlo | Éxito con `{prom:.2f}`. |
+| 5 – print no es return (código) | Probar el código inicial | Imprime el número suelto y `nombre: None`. Cambiando `print` por `return` → éxito. |
+| Minijuego – Ordena el conjuro | Poner la llamada antes del `def` | Aparece el Fantasma (NameError: la función todavía no existe). |
+| Boss – Hechicero Espagueti | Ronda 1: argumentos por nombre. Ronda 2: reescribir con `def total(...)`. Ronda 3: `aplicar_n` | El código inicial de la ronda 2 tiene un error de copiar y pegar en la tercera cuenta. |
+
+Probá también un `contador += 1` adentro de una función sin `global`: aparece el Fantasma con `UnboundLocalError` y la explicación.
+
+### Mundo 7: Catacumbas de los Errores (try/except, archivos)
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – El conversor prudente (Frasco) | `'7'` y `'tres'` | `'tres'` se convierte en 0 sin explotar → 7. |
+| 2 – ¿Quién atrapa el error? (Frasco) | `y = '1'` (texto) | Da `'c-tipo'`: entra el `except TypeError`. |
+| 3 – Pedí hasta que sea un número (código) | Usar `isdigit()` | Prohibido (el búho avisa). Con `try`/`except ValueError`/`else` + `break` → éxito. |
+| 4 – Las notas grabadas en piedra (código) | Sin `try` | Los casos muestran el contenido de `notas.txt`; el caso 3 dice "(no hay ningún archivo)" y trae al **Hechizo Rebotado** (FileNotFoundError). |
+| 5 – El registro de la expedición (código) | Escribir sin pasar a mayúsculas | "El archivo no quedó bien": se revisa cómo queda `registro.txt`. |
+| Minijuego – Duelo de Bugs | Ronda 2: modo `'w'` contra `'a'` | Con `'w'` se borra lo que había. |
+| Boss – Hechizo Rebotado | Ronda 1: `'-3'` y `'-2'` | Dan -1 cada uno (el `raise` los rechaza) → 1. Ronda 2: calculadora que nunca explota. Ronda 3: leer `hechizos.log` salteando líneas inválidas. |
+
+### Mundo 8: Cámara de los Espejos (recursión)
+
+| Casita | Probá | Debería pasar |
+|---|---|---|
+| 1 – La escalera de espejos (Frasco) | La ficha `-1` | Nunca llega al caso base: aparece el **Espejo Infinito** (RecursionError). Con 5 → éxito. |
+| 2 – El reflejo al revés (Frasco) | `'hola'` y `'!'` | Éxito. |
+| 3 – El factorial reflejado (código) | Resolverlo con un `for` | Prohibido. `factorial(20)` tiene que dar 2432902008176640000. |
+| 4 – Binario de espejo (código) | Sin caso base para 0 y 1 | RecursionError. |
+| 5 – Las torres de Hanoi (código) | n = 4 | 15 movimientos. |
+| Minijuego – Bola de cristal | Ronda 3 (sin caso base) | La respuesta correcta es `RecursionError`. |
+| Boss – Espejo Infinito | Ronda 2: el caso base `n == 10` | RecursionError hasta cambiarlo por `n < 10`. Ronda 3: la variable `carpeta` aparece en cada caso. Al ganar: "¡Dominaste el Grimorio!". |
 
 ## 8. Guardado
 

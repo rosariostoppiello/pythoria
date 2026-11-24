@@ -22,7 +22,7 @@
 - **Animación del aprendiz**: saltito de 2 frames al caminar y "respiración" (escala vertical) quieto, sin sprites extra.
 - **Texturas en `_draw()`**: con el renderer de compatibilidad de Godot 4.7, una textura cargada dentro del primer `_draw()` se pinta blanca. Se cargan en `_ready()` y se redibuja un frame después.
 - **Mapa de mundos**: la línea punteada se dibuja con `_draw()` (puntos cada 18 px), en lavanda hasta donde llegaste y gris después. `current_world` del guardado es donde está parado el aprendiz; si es menor que el último mundo desbloqueado (porque venciste un boss), al abrir el mapa camina por la línea hasta el nuevo nodo, que aparece con un "pop", y se guarda.
-- **Mundos 4 a 8**: si se llegaran a desbloquear (solo posible con el botón debug), se muestran como "Próximamente" y no se puede entrar porque no tienen casitas en el JSON.
+- **Mundos sin casitas**: si se llegaran a desbloquear, se muestran como "Próximamente" y no se puede entrar. (Hoy los 8 mundos tienen casitas.)
 - **Casitas de boss**: el techo se tiñe rojizo cuando están disponibles, para distinguirlas (sin sprite extra).
 - **Casitas de mundos placeholder** (2 y 3): abren "Próximamente" con los temas del mundo; el botón "Completar (debug)" solo existe si `OS.is_debug_build()` (en el editor sí, en un export release no).
 - **Frascos sin restricción de tipo**: cada frasco muestra qué esencia espera ("esencia: int (número)"), pero acepta cualquier ficha, como una variable de Python. Si se mezclan tipos, el error aparece al Lanzar (Quimera Tipos). Si el frasco rechazara la ficha, la Quimera nunca podría aparecer.
@@ -49,7 +49,6 @@
 
 ## Lo que no se pudo hacer
 
-- **Push al remoto**: el primer push (fase A) funcionó, pero desde la fase B `git push` se queda colgado en `git credential-osxkeychain`, probablemente esperando un permiso del llavero de macOS en pantalla. Los commits están todos en local, en `main`. Para subirlos: `git push origin main` desde tu terminal (y aceptá el diálogo del llavero si aparece).
 - **GUT** no se instaló: se usó un runner propio sin dependencias (`tests/run_tests.gd`).
 
 ## Errores conocidos y limitaciones
@@ -90,7 +89,7 @@
 - **Bucle infinito**: Python se colgaría; el evaluador corta a los 20.000 pasos con el error del juego `BucleInfinito` y aparece el **Ouroboros**. No es un error real de Python y así lo dice el mensaje.
 - **`sum()`** por ahora solo acepta un `range` (no hay listas todavía).
 - **Duelo de Bugs** (`kind: "duelo_de_bugs"`): cada arreglo reemplaza una línea (`{"line", "text"}`); un test verifica que el código con el bug no anda y que exactamente un arreglo lo cura. La sangría se muestra con `·` en los botones.
-- **Mundo 4** queda como "Próximamente" (sin casitas en el JSON).
+- **Mundo 4** quedaba como "Próximamente"; ya tiene contenido (ver más abajo).
 
 ## Publicación en Vercel
 
@@ -103,3 +102,23 @@
 - **El proyecto de Vercel no está conectado al repo** a propósito: Vercel no puede compilar Godot, así que si se conecta, cada push dispararía un build que falla. Publica GitHub Actions.
 - **Clon limpio**: la primera importación de Godot tira errores falsos (carga el tema antes que las fuentes); `tools/check.sh` hace una pasada previa cuando no existe `.godot/`.
 - **Vercel conectado al repo**: se puede tener conectado (sirve para ver los commits en el panel de Vercel), pero `vercel.json` en la raíz desactiva los deploys automáticos por push (`git.deploymentEnabled: false`). Si no, Vercel publica los archivos fuente tal cual (sin exportar Godot) y la página da 404. Publica siempre GitHub Actions o `tools/deploy_web.sh`.
+
+## Mundos 4 a 8 (agregado después)
+
+- **Evaluador ampliado** (`scripts/level/py_eval.gd`): listas, tuplas, slicing, diccionarios, sets, comprensiones, `def`/`return`/`global`/`lambda` (con `UnboundLocalError` y valores por defecto compartidos como en Python), `try`/`except`/`else`/`finally`, `raise`, `with open(...)`, `del`, `assert`, `str.format`, y funciones como `sorted` (estable, con `key` y `reverse`), `enumerate`, `zip`, `map`, `filter`, `isinstance`, `type`. Antes de correr se revisa la sintaxis de todo el programa (como Python: un SyntaxError no imprime nada). Se aceptan líneas partidas adentro de paréntesis, comentarios al final de una línea, `if x: algo` en una sola línea y nombres con tilde o ñ.
+- **Comparado con Python real**: `tools/py_diff.py` corre los mismos programas en el evaluador y en Python y muestra las diferencias. El contenido de los mundos 4 a 8 se armó calculando las salidas esperadas con Python real.
+- **Límites conocidos del evaluador**:
+  - Los enteros son de 64 bits: `2 ** 100` no da lo mismo que en Python. El contenido no usa números tan grandes (`factorial(20)` es el máximo).
+  - Los sets se recorren en el orden en que se agregaron; Python usa otro orden (según el hash). Por eso el contenido siempre los pasa por `sorted()` antes de imprimirlos.
+  - `d.keys()`, `d.items()`, `map()`, `zip()`, `enumerate()` devuelven listas: andan igual en un `for`, pero `print(d.keys())` no muestra `dict_keys([...])`.
+  - No hay clases, `import`, `*args`, `nonlocal`, generadores ni `yield` (la POO queda fuera de este prototipo). `import` da un aviso.
+  - La recursión se corta a las **60** llamadas anidadas (Python corta a 1000), para no pasarse de la pila de GDScript. Para eso se subió `debug/settings/gdscript/max_call_stack` a 4096 en `project.godot`.
+  - `print(f)` de una función muestra `<function f>` sin la dirección de memoria.
+- **Archivos**: son en memoria. Cada caso de prueba trae los suyos (`files`) y puede pedir cómo tienen que quedar (`files_out`). No se toca el disco del jugador.
+- **Mecánicas nuevas**: valores fijos en el Frasco (`given`), meta de cualquier tipo (`"type": "expr"`), "Ordena el conjuro" (escena `order_spell`), "Trivia del aula" (usa la escena de la bola de cristal con otro texto y el búho), `forbid` en los ejercicios de código, y `vars` para variables ya definidas en un caso. Ver `docs/DISENO.md` §4d a §4g.
+- **Criaturas por error**: IndexError → Espectro del Índice, KeyError → Archivista del Caos, RecursionError → Espejo Infinito, FileNotFoundError y otros errores sin atrapar → Hechizo Rebotado, UnboundLocalError → Fantasma Sin Nombre.
+- **Sprites nuevos**: `espectro_indice`, `archivista_caos`, `hechicero_espagueti`, `hechizo_rebotado`, `espejo_infinito` y `scroll` (pergamino del minijuego).
+- **Mapas de sección**: cada mundo nuevo tiene sus casitas en otras posiciones (ya no repiten la disposición del mundo 1).
+- **"Próximamente"**: ya no hay mundos sin casitas. La pantalla y el estado del mapa siguen en el código (y en los tests, sacándole las casitas al mundo 4 durante la prueba) por si se agrega un mundo nuevo vacío.
+- **Por verificar a mano en la web**: la recursión profunda (mundo 8) se probó en Godot de escritorio; en el navegador el build release no tiene el límite de pila de GDScript y debería andar igual, pero conviene jugar el mundo 8 en la URL publicada.
+- **Fin del juego**: al vencer al Espejo Infinito se muestra el mensaje de victoria y se vuelve al mapa; no hay una pantalla de créditos.

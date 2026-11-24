@@ -15,8 +15,7 @@ Dentro: solo el juego en Godot.
 - Guardado de progreso local.
 - Mapa de mundos (línea punteada) y mapas de sección con casitas.
 - Prototipo "hola mundo" jugable: el aprendiz camina por el mapa y choca con las casitas.
-- Mundo 1 completo y jugable (5 niveles, 1 minijuego, 1 boss) con la mecánica del Frasco.
-- Mundos 2 a 8 existen como datos; 2 y 3 tienen casitas placeholder; el resto se ve bloqueado.
+- Los 8 mundos completos y jugables (5 niveles, 1 minijuego y 1 boss cada uno).
 - Arte placeholder en pixel art, tests básicos.
 
 Fuera (etapas posteriores): editor Monaco, Pyodide, login, backend, IA de pistas, ranking, POO, 1v1, tienda.
@@ -68,6 +67,22 @@ El jugador escribe un programa en un editor de código dentro del juego (resalta
 - Una consigna puede exigir usar algo (`require`: un f-string, un `elif`); si falta, avisa el búho.
 - Algunos desafíos son "arreglá el hechizo": el código inicial tiene errores que hay que corregir.
 - Valen 80 XP (campo `xp` del nivel) y tienen las mismas 3 pistas de Ada.
+
+### 4d. Valores fijos en el Frasco (mundos 4 a 8)
+
+Un nivel del Frasco puede traer líneas fijas (`given` en el JSON): una lista, un diccionario o una función ya escrita (`def escudo(nivel, bonus=3): ...`). Se corren antes del caldero y se ven arriba del código en vivo. Así los frascos siguen siendo pocos y el foco queda en un concepto: el slicing, una clave, un valor por defecto, qué `except` atrapa, el caso base. La meta puede ser cualquier valor de Python escribiéndola como código (`"type": "expr"`, por ejemplo `[50, 30]`).
+
+### 4e. Ordena el conjuro (mundos 4 y 6)
+
+Las líneas de un programa aparecen mezcladas (y a veces sobra alguna, en `extra`). Se tocan en el orden en que tienen que correr; tocar una línea del conjuro la devuelve. Vale cualquier orden que imprima lo pedido. La sangría viene con cada línea y se ve con `·`.
+
+### 4f. Trivia del aula (mundo 5)
+
+Preguntas de opción múltiple, con un código para leer si hace falta. La respuesta está en el JSON (`answer`); si la pregunta es sobre qué imprime un código, `verify` hace que los tests la comparen con lo que imprime de verdad. Al acertar se ve la explicación (`explain`); al errar, solo una pista (`hint`), para no regalar la respuesta.
+
+### 4g. Archivos y variables en los casos de prueba
+
+Un caso de "Escribí el hechizo" puede traer archivos que existen al empezar (`files`), cómo tienen que quedar al terminar (`files_out`) y variables ya definidas (`vars`, por ejemplo un diccionario anidado). `open()` trabaja sobre esos archivos en memoria. `forbid` prohíbe algo (un `for` en un ejercicio de recursión, `.count()`, `isdigit()`).
 
 ## 5. Valores de juego (propuesta, ajustables en `data/worlds.json`)
 
@@ -157,6 +172,43 @@ Idea a futuro: preguntas y rondas del boss generadas por IA adaptadas al nivel d
 - **Minijuego "Duelo de Bugs":** un hechizo con un bug, lo que debería imprimir y lo que imprime de verdad (si es un bucle infinito, "se repite para siempre"). Hay que elegir el arreglo de una línea que lo cura; el correcto sale de ejecutar cada arreglo. Los espacios de sangría se muestran como "·" porque a veces el arreglo es justamente la sangría. 4 rondas: `range` que no incluye el final, un `while` infinito por sangría, `break` contra `continue`, y un `print` adentro del bucle.
 - **Boss Ouroboros:** 3 rondas (Frasco con `sum(range(a, b, c))`, arreglar un contador de pasos de Collatz y una contraseña con 3 intentos y `break`).
 - **Bucles infinitos:** el evaluador corta a los 20.000 pasos y aparece el Ouroboros ("el bucle nunca termina").
+
+## 9d. Mundo 4: Biblioteca de los Pergaminos
+
+- **Niveles 1 y 2 (Frasco):** slicing de un texto (`palabra[4:9]`, también con negativos) y de una lista con paso negativo (`tomos[4:1:-2]`).
+- **Niveles 3 a 5 (código):** `split()`, `append`, `len`/`sum`/`max`; palíndromo con `[::-1]`; lista de tuplas (título, año) y búsqueda del mínimo con empate.
+- **Minijuego "Ordena el conjuro":** métodos de lista, acumulador en un `for` (con un `print` de sobra), slicing y desempaquetado de tuplas.
+- **Boss Espectro del Índice:** índice fuera de rango (IndexError), arreglar un `range(len(x) + 1)` y rotar una lista con slicing y `%`.
+
+## 9e. Mundo 5: Salón de las Runas
+
+- **Niveles 1 y 2 (Frasco):** claves exactas de un diccionario (KeyError con `'Pluma'`) y sets sin repetidos.
+- **Niveles 3 a 5 (código):** contar con `.get(x, 0)`, `&` y `-` entre sets con `sorted`, y un diccionario de listas.
+- **Minijuego "Trivia del aula":** claves repetidas, claves inmutables, `{}` es un dict, KeyError contra `.get()`, sets sin repetidos.
+- **Boss Archivista del Caos:** diccionario de listas, arreglar un contador con KeyError, inventario y receta.
+
+## 9f. Mundo 6: Taller de Embrujos
+
+- **Niveles 1 y 2 (Frasco):** valores por defecto y la `x` local que no toca a la global.
+- **Niveles 3 a 5 (código):** `es_primo` con `return`, devolver una tupla y desarmarla, arreglar un `print` que debería ser `return`.
+- **Minijuego "Ordena el conjuro":** definir antes de llamar, valores por defecto, `global` y funciones como valores (`lambda`).
+- **Boss Hechicero Espagueti:** argumentos por nombre, reescribir un código copiado y pegado con una función, `aplicar_n(f, x, n)`.
+- El evaluador da `UnboundLocalError` como Python cuando se asigna una variable global adentro de una función sin `global`.
+
+## 9g. Mundo 7: Catacumbas de los Errores
+
+- **Niveles 1 y 2 (Frasco):** una función que atrapa ValueError y otra con dos `except` (qué except atrapa qué error).
+- **Niveles 3 a 5 (código):** pedir hasta que sea un número (`try`/`except`/`else`), leer un archivo y atrapar FileNotFoundError, escribir un archivo con `'w'` y volver a leerlo.
+- **Minijuego "Duelo de Bugs":** except del tipo equivocado, `'w'` que borra lo anterior, except que no devuelve nada, `except Exception` antes del específico.
+- **Boss Hechizo Rebotado:** `raise` adentro de un `try`, una calculadora que nunca explota y leer un log salteando líneas inválidas.
+
+## 9h. Mundo 8: Cámara de los Espejos
+
+- **Niveles 1 y 2 (Frasco):** suma recursiva (sin caso base aparece el Espejo Infinito) y dar vuelta un texto.
+- **Niveles 3 a 5 (código, sin bucles):** factorial, binario y torres de Hanoi.
+- **Minijuego "Bola de cristal":** print antes o después de la llamada recursiva, falta de caso base, cuántas llamadas hace fib.
+- **Boss Espejo Infinito:** recursión con paso de a dos, arreglar un caso base que nunca se cumple, y el tamaño de una carpeta anidada (diccionarios adentro de diccionarios).
+- La recursión se corta a las 60 llamadas anidadas con RecursionError (Python corta a 1000).
 
 ## 10. Progresión y guardado
 
