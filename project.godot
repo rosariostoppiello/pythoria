@@ -27,6 +27,10 @@ SaveSystem="*res://scripts/core/save_system.gd"
 GameState="*res://scripts/core/game_state.gd"
 SceneManager="*res://scripts/core/scene_manager.gd"
 
+[debug]
+
+settings/gdscript/max_call_stack=4096
+
 [display]
 
 window/size/viewport_width=1280
