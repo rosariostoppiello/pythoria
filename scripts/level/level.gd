@@ -134,7 +134,7 @@ func _goal_row(p: Dictionary) -> Control:
 	var row := UI.hbox(8)
 	row.name = "GoalRow"
 	row.add_child(UI.label("Llegá a:" if FrascoLogic.is_crossroads(p) else "El caldero pide:", "InkLabel"))
-	var gt := FrascoLogic.goal_type(p)
+	var gt := PyEval.type_name(FrascoLogic.goal_value(p))
 	var chip := TokenChip.new(PyEval.repr(FrascoLogic.goal_value(p)), ThemeColors.essence(gt))
 	chip.draggable = false
 	chip.mouse_default_cursor_shape = Control.CURSOR_ARROW

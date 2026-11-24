@@ -635,15 +635,15 @@ func _tokenize(src: String) -> Array:
 					is_float = true
 				j += 1
 			var text := src.substr(i, j - i).replace("_", "")
-			if j < n and (src[j].is_valid_identifier() and not src[j].is_valid_int()):
+			if j < n and _is_name_char(src[j]) and not src[j].is_valid_int():
 				_fail("SyntaxError", "número mal escrito")
 				return []
 			toks.append({"t": "NUM", "v": text.to_float() if is_float else text.to_int()})
 			i = j
 			continue
-		if c == "_" or c.is_valid_identifier():
+		if _is_name_char(c) and not c.is_valid_int():
 			var k := i
-			while k < n and (src[k] == "_" or src[k].is_valid_identifier() or src[k].is_valid_int()):
+			while k < n and _is_name_char(src[k]):
 				k += 1
 			toks.append({"t": "NAME", "v": src.substr(i, k - i)})
 			i = k
@@ -660,6 +660,20 @@ func _tokenize(src: String) -> Array:
 			return []
 	toks.append({"t": "EOF", "v": ""})
 	return toks
+
+
+static func _is_identifier(s: String) -> bool:
+	if s == "" or s[0].is_valid_int():
+		return false
+	for ch in s:
+		if not _is_name_char(ch):
+			return false
+	return true
+
+
+## Letra, dígito o _ (también letras con tilde y ñ, como en Python 3).
+static func _is_name_char(c: String) -> bool:
+	return c == "_" or c.is_valid_identifier() or c.is_valid_int() or (c.unicode_at(0) > 127 and c.to_lower() != c.to_upper())
 
 
 func _string_end(src: String, start: int) -> int:
@@ -1691,7 +1705,7 @@ static var _local_res: Array = []
 
 static func _def_regex() -> RegEx:
 	if _def_re == null:
-		_def_re = RegEx.create_from_string("^def\\s+([A-Za-z_]\\w*)\\s*\\((.*)\\)\\s*:$")
+		_def_re = RegEx.create_from_string("^def\\s+([\\p{L}_][\\p{L}\\p{N}_]*)\\s*\\((.*)\\)\\s*:$")
 	return _def_re
 
 
@@ -1716,7 +1730,7 @@ func _exec_def(prog: Array, i: int, end: int, indent: int) -> int:
 		if eq >= 0:
 			pname = p.substr(0, eq).strip_edges()
 			default_src = p.substr(eq + 1).strip_edges()
-		if not pname.is_valid_identifier() or pname in KEYWORDS:
+		if not _is_identifier(pname) or pname in KEYWORDS:
 			_fail("SyntaxError", "parámetro inválido en %s(): %s" % [f.name, p])
 			return end
 		if f.params.has(pname):
@@ -1749,14 +1763,14 @@ func _exec_def(prog: Array, i: int, end: int, indent: int) -> int:
 static func _scan_locals(prog: Array, start: int, end: int, f: PyFunc) -> void:
 	if _local_res.is_empty():
 		for pattern: String in [
-			"^([A-Za-z_]\\w*(?:\\s*,\\s*[A-Za-z_]\\w*)*)\\s*(?:=(?!=)|\\+=|-=|\\*=|/=|//=|%=|\\*\\*=|\\|=|&=)",
+			"^([\\p{L}_][\\p{L}\\p{N}_]*(?:\\s*,\\s*[\\p{L}_][\\p{L}\\p{N}_]*)*)\\s*(?:=(?!=)|\\+=|-=|\\*=|/=|//=|%=|\\*\\*=|\\|=|&=)",
 			"^for\\s+(.+?)\\s+in\\s",
-			"^except\\b.*\\bas\\s+([A-Za-z_]\\w*)",
-			"^with\\b.*\\bas\\s+([A-Za-z_]\\w*)",
-			"^def\\s+([A-Za-z_]\\w*)",
+			"^except\\b.*\\bas\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+			"^with\\b.*\\bas\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
+			"^def\\s+([\\p{L}_][\\p{L}\\p{N}_]*)",
 		]:
 			_local_res.append(RegEx.create_from_string(pattern))
-	var word := RegEx.create_from_string("[A-Za-z_]\\w*")
+	var word := RegEx.create_from_string("[\\p{L}_][\\p{L}\\p{N}_]*")
 	for k in range(start, end):
 		var text: String = prog[k]["text"]
 		if text.begins_with("global "):
@@ -1902,7 +1916,7 @@ func _exec_with(prog: Array, i: int, end: int, indent: int) -> int:
 	if as_idx >= 0:
 		name = header.substr(as_idx + 4).strip_edges()
 		header = header.substr(0, as_idx).strip_edges()
-		if not name.is_valid_identifier():
+		if not _is_identifier(name):
 			_fail("SyntaxError", "después de 'as' va un nombre")
 			return end
 	var v: Variant = _eval(_parsed_expr(header))

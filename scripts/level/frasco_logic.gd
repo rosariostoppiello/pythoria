@@ -4,6 +4,9 @@ extends RefCounted
 ## Un "puzzle" es un nivel o una ronda de boss: goal, jars, tokens, operators, expression.
 ## La Encrucijada (mechanic = "encrucijada") usa los mismos frascos, pero en vez de un
 ## caldero tiene ramas if/elif/else ("branches") y gana si `variable` termina en goal.
+## `given` (opcional) son líneas de Python que se corren antes, por ejemplo una lista
+## o una función que el caldero usa; se muestran arriba del código en vivo.
+## El tipo "expr" en goal o en una ficha es código Python ("[50, 30]", "('a', 1)").
 
 const OP_PLACEHOLDER := "OP"
 
@@ -19,6 +22,11 @@ static func typed(value: Variant, type_name: String) -> Variant:
 			return bool(value)
 		"str":
 			return str(value)
+		"expr":
+			var r := PyEval.evaluate(str(value))
+			if not r["ok"]:
+				push_error("Valor 'expr' inválido en el JSON: %s (%s)" % [value, r["message"]])
+			return r["value"]
 	return value
 
 
@@ -32,7 +40,24 @@ static func goal_value(puzzle: Dictionary) -> Variant:
 
 
 static func goal_type(puzzle: Dictionary) -> String:
-	return str(puzzle.get("goal", {}).get("type", ""))
+	var t := str(puzzle.get("goal", {}).get("type", ""))
+	return PyEval.type_name(goal_value(puzzle)) if t == "expr" else t
+
+
+## Líneas fijas que se corren antes del caldero (listas, diccionarios, funciones).
+static func given(puzzle: Dictionary) -> Array:
+	return puzzle.get("given", [])
+
+
+## Variables que dejan las líneas fijas (se calculan de nuevo cada vez: así una lista
+## que el hechizo modifica no queda cambiada para el próximo intento).
+static func given_env(puzzle: Dictionary) -> Dictionary:
+	if given(puzzle).is_empty():
+		return {}
+	var r := PyEval.run(given(puzzle))
+	if not r["ok"]:
+		push_error("given inválido: %s" % r["message"])
+	return r["env"]
 
 
 static func jar_names(puzzle: Dictionary) -> Array[String]:
@@ -102,12 +127,16 @@ static func resolve(puzzle: Dictionary, op: String) -> String:
 
 ## Evalúa el caldero con los frascos llenos (values: nombre -> valor).
 static func evaluate(puzzle: Dictionary, values: Dictionary, op: String) -> Dictionary:
-	return PyEval.evaluate(resolve(puzzle, op), values)
+	var env := given_env(puzzle)
+	env.merge(values, true)
+	return PyEval.evaluate(resolve(puzzle, op), env)
 
 
 ## Código Python equivalente, línea por línea.
 static func code_lines(puzzle: Dictionary, values: Dictionary, op: String) -> PackedStringArray:
 	var lines: PackedStringArray = []
+	for g: Variant in given(puzzle):
+		lines.append(str(g))
 	for name: String in jar_names(puzzle):
 		if values.has(name):
 			lines.append("%s = %s" % [name, PyEval.repr(values[name])])
@@ -137,7 +166,9 @@ static func check(puzzle: Dictionary, values: Dictionary, op: String) -> Diction
 		return out
 	var r: Dictionary
 	if is_crossroads(puzzle):
-		r = PyEval.run(Array(branch_lines(puzzle, op)), values)
+		var env := given_env(puzzle)
+		env.merge(values, true)
+		r = PyEval.run(Array(branch_lines(puzzle, op)), env)
 		if r["ok"]:
 			r["value"] = r["env"].get(variable(puzzle))
 	else:
@@ -162,9 +193,9 @@ static func check(puzzle: Dictionary, values: Dictionary, op: String) -> Diction
 				out["message"] = "El hechizo está mal escrito."
 			_:
 				out["status"] = "error"
-				out["title"] = "¡El hechizo rebotó!"
-				out["creature"] = "gremlin_sintaxis"
-				out["message"] = "Algo salió mal al lanzar."
+				out["creature"] = CodeLogic.CREATURES.get(r["error"], "hechizo_rebotado")
+				out["title"] = CodeLogic.TITLES.get(out["creature"], "¡El hechizo rebotó!")
+				out["message"] = CodeLogic.ERROR_TIPS.get(r["error"], "Algo salió mal al lanzar.")
 		out["detail"] = r["message"]
 		return out
 	out["value"] = r["value"]

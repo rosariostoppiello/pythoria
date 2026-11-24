@@ -68,7 +68,9 @@ static func highlighter() -> CodeHighlighter:
 	h.symbol_color = ThemeColors.LAVANDA
 	h.function_color = ThemeColors.TURQUESA.lightened(0.2)
 	h.member_variable_color = ThemeColors.PERGAMINO
-	for kw: String in ["if", "elif", "else", "and", "or", "not", "True", "False", "None", "in", "while", "for", "def", "return"]:
+	for kw: String in ["if", "elif", "else", "and", "or", "not", "True", "False", "None", "in", "is", "while", "for",
+			"break", "continue", "pass", "def", "return", "lambda", "global", "try", "except", "finally", "raise",
+			"with", "as", "del"]:
 		h.add_keyword_color(kw, ThemeColors.VIOLETA.lightened(0.45))
 	h.add_color_region("#", "", ThemeColors.GRIS_BLOQUEADO.lightened(0.35), true)
 	h.add_color_region("'", "'", ThemeColors.PERGAMINO.darkened(0.15))
@@ -89,7 +91,16 @@ func _show_cases(results: Array) -> void:
 		if i < results.size():
 			mark = "✓" if results[i]["passed"] else "x"
 			color = ThemeColors.TURQUESA if results[i]["passed"] else ThemeColors.ROJO
-		case_rows[i].text = "%s Caso %d   input(): %s   imprime: %s" % [mark, i + 1, CodeLogic.describe_inputs(t), CodeLogic.one_line(CodeLogic.normalize(str(t.get("output", ""))))]
+		var setup := CodeLogic.describe_setup(t)
+		var head := "%s Caso %d   " % [mark, i + 1]
+		if setup != "":
+			head += setup + "   "
+		if not t.get("inputs", []).is_empty() or setup == "":
+			head += "input(): %s   " % CodeLogic.describe_inputs(t)
+		case_rows[i].text = head + "imprime: %s" % CodeLogic.one_line(CodeLogic.normalize(str(t.get("output", ""))))
+		var outs: Dictionary = t.get("files_out", {})
+		for fname: String in outs:
+			case_rows[i].text += "   y %s queda: «%s»" % [fname, CodeLogic.one_line(CodeLogic.normalize(str(outs[fname])))]
 		case_rows[i].add_theme_color_override("font_color", color)
 
 

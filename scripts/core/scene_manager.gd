@@ -13,6 +13,7 @@ const SCENES := {
 	"minigame": "res://scenes/level/minigame.tscn",
 	"crystal_ball": "res://scenes/level/crystal_ball.tscn",
 	"bug_duel": "res://scenes/level/bug_duel.tscn",
+	"order_spell": "res://scenes/level/order_spell.tscn",
 	"coming_soon": "res://scenes/level/coming_soon.tscn",
 }
 const PAUSE_SCENE := "res://scenes/pause/pause.tscn"
@@ -99,8 +100,10 @@ func goto_house(id: String) -> void:
 		key = "level"  # boss: rondas de Frasco
 	elif str(content.get("kind", "")) == "completa_el_hechizo":
 		key = "minigame"
-	elif str(content.get("kind", "")) == "bola_de_cristal":
+	elif str(content.get("kind", "")) in ["bola_de_cristal", "trivia_del_aula"]:
 		key = "crystal_ball"
+	elif str(content.get("kind", "")) == "ordena_el_conjuro":
+		key = "order_spell"
 	elif str(content.get("kind", "")) == "duelo_de_bugs":
 		key = "bug_duel"
 	elif str(content.get("mechanic", "")) in ["frasco", "encrucijada", "codigo"]:

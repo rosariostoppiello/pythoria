@@ -1,5 +1,7 @@
 extends Control
-## Minijuego "Bola de cristal": leer un código con if/elif/else y predecir qué imprime.
+## Minijuego "Bola de cristal": leer un código y predecir qué imprime (o qué error da).
+## También corre la "Trivia del aula" (kind = trivia_del_aula): preguntas con una
+## respuesta fija en el JSON y, si hace falta, un código para leer.
 
 var house_id: String
 var content: Dictionary
@@ -11,12 +13,16 @@ var _options_box: VBoxContainer
 var _round_label: Label
 var _progress: ProgressBar
 var _ball: TextureRect
+var _question_label: Label
+var _code_panel: PanelContainer
+var is_trivia := false
 
 
 func _ready() -> void:
 	SceneManager.set_state(SceneManager.State.LEVEL)
 	house_id = SceneManager.house_id
 	content = ContentDB.get_content(house_id)
+	is_trivia = str(content.get("kind", "")) == "trivia_del_aula"
 	UI.background(self)
 	add_child(TopBar.for_activity("Mundo %d · %s" % [ContentDB.world_of(house_id), content.get("title", "Minijuego")]))
 
@@ -33,7 +39,10 @@ func _ready() -> void:
 	var mbox := UI.vbox(8)
 	mission.add_child(mbox)
 	mbox.add_child(UI.label(str(content.get("title", "")), "InkTitle"))
-	var how := UI.label("La bola de cristal muestra un hechizo. Seguilo línea por línea y elegí qué va a pasar: qué imprime, o qué error da.", "InkLabel")
+	var how_text := "La bola de cristal muestra un hechizo. Seguilo línea por línea y elegí qué va a pasar: qué imprime, o qué error da."
+	if is_trivia:
+		how_text = "El búho de Ada toma examen. Leé cada pregunta con calma y elegí la respuesta correcta."
+	var how := UI.label(how_text, "InkLabel")
 	how.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	how.custom_minimum_size = Vector2(330, 0)
 	mbox.add_child(how)
@@ -43,7 +52,7 @@ func _ready() -> void:
 	var sbox := UI.vbox(10)
 	sbox.alignment = BoxContainer.ALIGNMENT_CENTER
 	side.add_child(sbox)
-	_ball = UI.sprite_rect("crystal_ball", 3.0)
+	_ball = UI.sprite_rect("owl" if is_trivia else "crystal_ball", 3.0)
 	_ball.pivot_offset = _ball.custom_minimum_size / 2
 	sbox.add_child(_ball)
 	var glow := _ball.create_tween().set_loops()
@@ -60,15 +69,20 @@ func _ready() -> void:
 	var right := UI.vbox(16)
 	right.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	main.add_child(right)
-	var code_panel := UI.panel("CodePanel")
-	right.add_child(code_panel)
+	_question_label = UI.label("", "HeaderLabel")
+	_question_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_question_label.visible = is_trivia
+	right.add_child(_question_label)
+	_code_panel = UI.panel("CodePanel")
+	right.add_child(_code_panel)
 	var cbox := UI.vbox(6)
-	code_panel.add_child(cbox)
-	cbox.add_child(UI.label("El hechizo", "MutedLabel"))
+	_code_panel.add_child(cbox)
+	cbox.add_child(UI.label("El código" if is_trivia else "El hechizo", "MutedLabel"))
 	_code_label = UI.label("", "CodeLabel")
-	_code_label.add_theme_font_size_override("font_size", 22)
+	_code_label.add_theme_font_size_override("font_size", 20 if is_trivia else 22)
 	cbox.add_child(_code_label)
-	right.add_child(UI.label("¿Qué va a pasar?", "HeaderLabel"))
+	if not is_trivia:
+		right.add_child(UI.label("¿Qué va a pasar?", "HeaderLabel"))
 	_options_box = UI.vbox(10)
 	right.add_child(_options_box)
 	_load_round()
@@ -80,7 +94,9 @@ func current_round() -> Dictionary:
 
 func _load_round() -> void:
 	var r := current_round()
-	_code_label.text = "\n".join(r["code"])
+	_question_label.text = str(r.get("question", ""))
+	_code_panel.visible = r.has("code")
+	_code_label.text = "\n".join(r.get("code", []))
 	var inputs: Array = r.get("inputs", [])
 	if not inputs.is_empty():
 		_code_label.text += "\n\n# entrada para input(): %s" % " / ".join(PackedStringArray(inputs.map(func(v: Variant) -> String: return str(v))))
@@ -101,7 +117,7 @@ func _load_round() -> void:
 
 
 func choose(option: String) -> Dictionary:
-	var r := MinigameLogic.check_prediction(current_round(), option)
+	var r := MinigameLogic.check_trivia(current_round(), option) if is_trivia else MinigameLogic.check_prediction(current_round(), option)
 	if r["status"] != "success":
 		SceneManager.show_result({"success": false, "title": r["title"], "message": r["message"], "detail": r["detail"], "creature": r["creature"]})
 		return r
@@ -114,5 +130,8 @@ func choose(option: String) -> Dictionary:
 		_load_round()
 		return r
 	var gained := GameState.complete_house(house_id)
-	SceneManager.show_result({"success": true, "xp": gained, "title": "¡Lo viste venir!", "message": "Predijiste las %d rondas." % round_idx})
+	if is_trivia:
+		SceneManager.show_result({"success": true, "xp": gained, "title": "¡Examen aprobado!", "message": "Respondiste las %d preguntas." % round_idx})
+	else:
+		SceneManager.show_result({"success": true, "xp": gained, "title": "¡Lo viste venir!", "message": "Predijiste las %d rondas." % round_idx})
 	return r

@@ -29,6 +29,10 @@ static func essence(type_name: String) -> Color:
 			return PERGAMINO
 		"bool":
 			return TURQUESA
+		"float":
+			return LAVANDA.lightened(0.2)
+		"list", "tuple", "dict", "set", "NoneType", "range":
+			return LAVANDA.lerp(PERGAMINO, 0.5)
 	return GRIS_BLOQUEADO
 
 static func world_color(world: Dictionary) -> Color:

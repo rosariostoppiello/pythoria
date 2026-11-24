@@ -41,7 +41,7 @@ static func check(round: Dictionary, choices: Array) -> Dictionary:
 		out["message"] = "Todavía hay huecos vacíos en el hechizo."
 		return out
 	var lines := fill(round["code"], choices)
-	var r := PyEval.run(lines, {}, round.get("inputs", []))
+	var r := run_round(round, lines)
 	out["output"] = r["output"]
 	if not r["ok"]:
 		var map := {
@@ -76,13 +76,13 @@ static func check(round: Dictionary, choices: Array) -> Dictionary:
 ## Lo que pasa de verdad al ejecutar el código: lo impreso o, si falla, el nombre
 ## del error (por ejemplo "TypeError"). La respuesta correcta sale de ejecutarlo.
 static func prediction_answer(round: Dictionary) -> String:
-	var r := PyEval.run(round["code"], {}, round.get("inputs", []))
+	var r := run_round(round, round["code"])
 	return str(r["output"]) if r["ok"] else str(r["error"])
 
 
 static func check_prediction(round: Dictionary, choice: String) -> Dictionary:
 	var out := {"status": "", "title": "", "message": "", "detail": "", "creature": "", "output": ""}
-	var r := PyEval.run(round["code"], {}, round.get("inputs", []))
+	var r := run_round(round, round["code"])
 	var answer := prediction_answer(round)
 	out["output"] = r["output"]
 	if not r["ok"]:
@@ -110,7 +110,12 @@ static func apply_fix(code: Array, fix: Dictionary) -> Array:
 
 
 static func run_duel(round: Dictionary, code: Array) -> Dictionary:
-	return PyEval.run(code, {}, round.get("inputs", []))
+	return run_round(round, code)
+
+
+## Corre el código de una ronda con sus entradas para input() y sus archivos.
+static func run_round(round: Dictionary, code: Array) -> Dictionary:
+	return PyEval.run(code, {}, round.get("inputs", []), round.get("files", {}))
 
 
 ## Primeras líneas de lo que imprime (o del error), para mostrar en pantalla.
@@ -145,4 +150,74 @@ static func check_fix(round: Dictionary, fix_idx: int) -> Dictionary:
 	out["detail"] = r["message"] if not r["ok"] else ""
 	var got := CodeLogic.one_line(preview(r, 4))
 	out["message"] = "Con ese arreglo el hechizo da «%s», pero tenía que imprimir «%s»." % [got.left(90), CodeLogic.one_line(expected).left(90)]
+	return out
+
+
+# --- Ordena el conjuro: armar el programa poniendo las líneas en orden ----------
+
+## Las líneas mezcladas (las del programa más las de sobra, "extra"). Siempre en el
+## mismo orden para una ronda, y nunca en el orden correcto.
+static func shuffled_lines(round: Dictionary) -> Array:
+	var lines: Array = (round["lines"] as Array) + (round.get("extra", []) as Array)
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash("\n".join(PackedStringArray(lines)))
+	var out := lines.duplicate()
+	for attempt in 20:
+		for i in range(out.size() - 1, 0, -1):
+			var j := rng.randi_range(0, i)
+			var tmp: Variant = out[i]
+			out[i] = out[j]
+			out[j] = tmp
+		if out.slice(0, (round["lines"] as Array).size()) != round["lines"]:
+			break
+	return out
+
+
+## status: success, wrong, error, incomplete. El orden vale si el programa imprime lo pedido.
+static func check_order(round: Dictionary, chosen: Array) -> Dictionary:
+	var out := {"status": "", "title": "", "message": "", "detail": "", "creature": "", "output": ""}
+	if chosen.is_empty():
+		out["status"] = "incomplete"
+		out["title"] = "El conjuro está vacío"
+		out["creature"] = "owl"
+		out["message"] = "Tocá las líneas en el orden en que tiene que correr el programa."
+		return out
+	var r := run_round(round, chosen)
+	out["output"] = r["output"]
+	var expected := CodeLogic.normalize(str(round["output"]))
+	if r["ok"] and CodeLogic.normalize(str(r["output"])) == expected:
+		out["status"] = "success"
+		out["title"] = "¡Conjuro ordenado!"
+		out["message"] = "El programa imprime lo que tenía que imprimir."
+		return out
+	if not r["ok"]:
+		out["status"] = "error"
+		out["creature"] = CodeLogic.CREATURES.get(r["error"], "gremlin_sintaxis")
+		out["title"] = CodeLogic.TITLES.get(out["creature"], "¡El hechizo rebotó!")
+		out["detail"] = r["message"]
+		out["message"] = CodeLogic.ERROR_TIPS.get(r["error"], "El conjuro falla en ese orden.")
+		return out
+	out["status"] = "wrong"
+	out["creature"] = "cauldron"
+	out["title"] = "El conjuro no hizo lo esperado"
+	var got := CodeLogic.one_line(preview(r, 4))
+	out["message"] = "En ese orden el programa imprime «%s», pero tenía que imprimir «%s»." % [got.left(90), CodeLogic.one_line(expected).left(90)]
+	return out
+
+
+# --- Trivia del aula: preguntas con una respuesta -----------------------------
+## Ronda: question, code (opcional), options, answer, explain (al acertar) y hint (al errar).
+
+static func check_trivia(round: Dictionary, choice: String) -> Dictionary:
+	var out := {"status": "", "title": "", "message": "", "detail": "", "creature": "", "output": ""}
+	var explain := str(round.get("explain", ""))
+	if choice == str(round["answer"]):
+		out["status"] = "success"
+		out["title"] = "¡Correcto!"
+		out["message"] = explain
+	else:
+		out["status"] = "wrong"
+		out["title"] = "Esa no era"
+		out["creature"] = "owl"
+		out["message"] = "Elegiste «%s». %s" % [choice, str(round.get("hint", "Pensalo de nuevo con calma."))]
 	return out

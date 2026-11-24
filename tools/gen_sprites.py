@@ -439,6 +439,143 @@ def bug() -> Image.Image:
     return img
 
 
+def espectro_indice() -> Image.Image:
+    """Espectro del Índice (mundo 4): encapuchado que señala posiciones que no existen."""
+    img, d = canvas(24)
+    robe = shade(ROJO, 0.7)
+    # capucha y túnica que se deshace abajo
+    d.ellipse([6, 1, 17, 12], fill=robe)
+    d.polygon([(5, 8), (18, 8), (21, 21), (2, 21)], fill=robe)
+    for i, x in enumerate(range(2, 21, 3)):
+        d.polygon([(x, 21), (x + 3, 21), (x + 1, 23 if i % 2 == 0 else 22)], fill=robe)
+    # cara oscura con ojos rojos
+    d.ellipse([8, 4, 15, 11], fill=TINTA)
+    px(d, [(10, 7), (13, 7)], ROJO)
+    px(d, [(10, 6), (13, 6)], shade(ROJO, 1.4))
+    # corchetes flotando a los lados: [ ]
+    d.line([(0, 11), (0, 17)], fill=PERGAMINO)
+    px(d, [(1, 11), (1, 17)], PERGAMINO)
+    d.line([(23, 11), (23, 17)], fill=PERGAMINO)
+    px(d, [(22, 11), (22, 17)], PERGAMINO)
+    # el índice robado: un -1 en el pecho
+    px(d, [(9, 15), (10, 15)], PERGAMINO)
+    d.line([(13, 13), (13, 17)], fill=PERGAMINO)
+    px(d, [(12, 14)], PERGAMINO)
+    return img
+
+
+def archivista_caos() -> Image.Image:
+    """Archivista del Caos (mundo 5): mezcla las claves de los diccionarios."""
+    img, d = canvas(24)
+    robe = ROJO
+    # cuerpo encorvado con túnica
+    d.polygon([(6, 10), (18, 10), (20, 22), (4, 22)], fill=robe)
+    d.line([(12, 11), (12, 21)], fill=shade(ROJO, 0.6))
+    # cabeza con anteojos rotos
+    d.ellipse([7, 2, 16, 11], fill=shade(ROJO, 0.8))
+    d.ellipse([8, 5, 11, 8], outline=PERGAMINO)
+    d.ellipse([12, 5, 15, 8], outline=PERGAMINO)
+    px(d, [(9, 6), (13, 7)], TINTA)
+    px(d, [(11, 6)], PERGAMINO)
+    # llaves { } de diccionario en las manos
+    d.arc([0, 11, 6, 21], 90, 270, fill=PERGAMINO)
+    px(d, [(1, 16), (2, 16)], PERGAMINO)
+    d.arc([17, 11, 23, 21], 270, 90, fill=PERGAMINO)
+    px(d, [(21, 16), (22, 16)], PERGAMINO)
+    # papeles volando
+    d.rectangle([2, 2, 5, 5], fill=PERGAMINO)
+    px(d, [(3, 3), (4, 4)], GRIS)
+    d.rectangle([18, 1, 21, 4], fill=PERGAMINO)
+    px(d, [(19, 2), (20, 3)], GRIS)
+    return img
+
+
+def hechicero_espagueti() -> Image.Image:
+    """Hechicero Espagueti (mundo 6): su código es una maraña sin funciones."""
+    img, d = canvas(24)
+    # sombrero rojo torcido
+    d.polygon([(15, 0), (6, 8), (18, 8)], fill=ROJO)
+    d.rectangle([4, 8, 19, 9], fill=shade(ROJO, 0.7))
+    # cara
+    d.ellipse([7, 8, 16, 15], fill=PIEL)
+    px(d, [(9, 11), (14, 11)], TINTA)
+    d.line([(10, 13), (13, 13)], fill=ROJO)
+    # barba enredada
+    d.polygon([(8, 14), (15, 14), (12, 19)], fill=PERGAMINO)
+    # túnica
+    d.polygon([(6, 15), (17, 15), (20, 23), (3, 23)], fill=shade(ROJO, 0.8))
+    # fideos enredados que le salen de las manos
+    noodle = shade(PERGAMINO, 0.9)
+    d.arc([0, 12, 7, 19], 0, 300, fill=noodle)
+    d.arc([1, 15, 6, 22], 120, 420, fill=noodle)
+    d.arc([16, 12, 23, 19], 240, 540, fill=noodle)
+    d.arc([17, 16, 22, 22], 30, 330, fill=noodle)
+    d.line([(4, 19), (19, 17)], fill=noodle)
+    return img
+
+
+def hechizo_rebotado() -> Image.Image:
+    """Hechizo Rebotado (mundo 7): una excepción que nadie atrapó."""
+    img, d = canvas(24)
+    # pared contra la que rebota
+    d.rectangle([20, 2, 23, 22], fill=GRIS)
+    for y in (6, 11, 16):
+        d.line([(20, y), (23, y)], fill=shade(GRIS, 0.7))
+    # estela del rebote
+    d.line([(2, 20), (10, 12)], fill=shade(ROJO, 0.6))
+    d.line([(10, 12), (18, 6)], fill=shade(ROJO, 0.6))
+    # bola de fuego con cara enojada
+    d.ellipse([4, 6, 17, 19], fill=ROJO)
+    d.ellipse([6, 8, 15, 17], fill=shade(ROJO, 1.25))
+    px(d, [(8, 11), (13, 11)], TINTA)
+    d.line([(8, 10), (10, 11)], fill=TINTA)
+    d.line([(14, 10), (12, 11)], fill=TINTA)
+    d.line([(9, 15), (12, 14)], fill=TINTA)
+    # llamas
+    d.polygon([(4, 9), (0, 7), (5, 12)], fill=ROJO)
+    d.polygon([(6, 6), (5, 1), (9, 6)], fill=ROJO)
+    # signo de exclamación
+    d.line([(19, 0), (19, 2)], fill=PERGAMINO)
+    return img
+
+
+def espejo_infinito() -> Image.Image:
+    """Espejo Infinito (mundo 8): un espejo que se refleja a sí mismo."""
+    img, d = canvas(24)
+    frame = MARRON
+    d.ellipse([3, 0, 20, 23], fill=frame)
+    d.ellipse([5, 2, 18, 21], fill=shade(ROJO, 0.55))
+    # reflejos uno adentro del otro
+    d.ellipse([7, 5, 16, 18], outline=shade(ROJO, 0.9))
+    d.ellipse([9, 8, 14, 15], outline=ROJO)
+    d.ellipse([10, 10, 13, 13], fill=shade(ROJO, 1.3))
+    # ojos en el marco
+    px(d, [(8, 3), (15, 3)], PERGAMINO)
+    px(d, [(8, 4), (15, 4)], TINTA)
+    # brillo del vidrio
+    px(d, [(7, 9), (7, 10), (8, 8)], PERGAMINO)
+    # adornos del marco
+    px(d, [(11, 0), (12, 0), (11, 23), (12, 23)], shade(MARRON, 1.4))
+    return img
+
+
+def scroll_icon() -> Image.Image:
+    """Pergamino enrollado (minijuego Ordena el conjuro)."""
+    img, d = canvas(24)
+    d.rectangle([4, 4, 19, 19], fill=PERGAMINO)
+    # rollos arriba y abajo
+    d.ellipse([2, 1, 21, 6], fill=shade(PERGAMINO, 0.85))
+    d.ellipse([2, 17, 21, 22], fill=shade(PERGAMINO, 0.85))
+    px(d, [(3, 3), (20, 3), (3, 19), (20, 19)], shade(PERGAMINO, 0.65))
+    # líneas de código con sangría
+    for y, x0, x1 in ((8, 6, 15), (10, 8, 17), (12, 8, 14), (14, 6, 16)):
+        d.line([(x0, y), (x1, y)], fill=VIOLETA)
+    # cinta violeta
+    d.rectangle([10, 4, 12, 19], fill=shade(VIOLETA, 1.2))
+    px(d, [(11, 11)], LAVANDA)
+    return img
+
+
 # --- Casitas ------------------------------------------------------------------
 
 def house(state: str) -> Image.Image:
@@ -567,6 +704,12 @@ def main() -> None:
         "guardian_puerta": guardian(),
         "crystal_ball": crystal_ball(),
         "bug": bug(),
+        "espectro_indice": espectro_indice(),
+        "archivista_caos": archivista_caos(),
+        "hechicero_espagueti": hechicero_espagueti(),
+        "hechizo_rebotado": hechizo_rebotado(),
+        "espejo_infinito": espejo_infinito(),
+        "scroll": scroll_icon(),
         "jar": jar(),
         "cauldron": cauldron(),
         "grimoire": grimoire(),
